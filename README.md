@@ -21,15 +21,6 @@
 
 ---
 
-## Why it’s fun
-
-- **Rooms & codes** — Host creates a room; everyone joins with a short code.
-- **Solo to party** — Supports 1–8 players (great for testing alone).
-- **Timed turns** — Prompts, drawing canvas (brush, shapes, fill, undo), and descriptions.
-- **Chain book reveal** — At the end, flip through the whole story like a book—not just one final image.
-- **Polished UI** — Dark glass aesthetic, motion, confetti, and **0xProto Nerd Font** (UI build).
-
----
 
 ## Quick start
 
