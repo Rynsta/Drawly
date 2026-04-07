@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Assignment, PublicRoomState } from "./game-types";
+import type { Assignment, PublicRoomState, RevealNav } from "./game-types";
 import type { LocalPlayer } from "./player-storage";
 import { getSocket } from "./socket-client";
 
@@ -26,6 +26,7 @@ interface DrawlyStore {
   updateSettings: (patch: Partial<PublicRoomState["settings"]>) => void;
   startGame: () => Promise<boolean>;
   submit: (content: { text?: string; imageDataUrl?: string }) => Promise<boolean>;
+  navigateReveal: (nav: RevealNav) => void;
 }
 
 export const useDrawlyStore = create<DrawlyStore>((set, get) => ({
@@ -84,6 +85,13 @@ export const useDrawlyStore = create<DrawlyStore>((set, get) => ({
 
     socket.on("game:assignment", (a: Assignment) => {
       set({ assignment: a, submitted: false });
+    });
+
+    socket.on("reveal:nav", (nav: RevealNav) => {
+      set((s) => {
+        if (!s.room) return s;
+        return { room: { ...s.room, revealNav: nav } };
+      });
     });
 
     if (socket.connected) markConnected();
@@ -186,4 +194,9 @@ export const useDrawlyStore = create<DrawlyStore>((set, get) => ({
         },
       );
     }),
+
+  navigateReveal: (nav) => {
+    const socket = getSocket();
+    socket.emit("reveal:navigate", nav);
+  },
 }));

@@ -13,7 +13,7 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { sfxError, sfxSuccess } from "@/lib/sfx";
 import { hapticSuccess } from "@/lib/haptics";
 
-const AUTO_SUBMIT_BUFFER_MS = 2500;
+const AUTO_SUBMIT_BUFFER_MS = 3500;
 
 export function GameView() {
   const room = useDrawlyStore((s) => s.room);
@@ -179,13 +179,22 @@ export function GameView() {
 
       {kind === "describe" && (
         <GlassCard>
-          {prevEntry?.imageDataUrl && (
+          {prevEntry?.imageDataUrl ? (
             <ImagePreview
               src={prevEntry.imageDataUrl}
               alt="Previous drawing"
               className="mb-4"
             />
-          )}
+          ) : prevEntry?.timedOut ? (
+            <div className="mb-4 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-6 text-center">
+              <p className="text-sm text-amber-200/80">
+                The previous player ran out of time — no drawing was submitted.
+              </p>
+              <p className="mt-1 text-xs text-zinc-500">
+                Describe whatever you think fits the story so far!
+              </p>
+            </div>
+          ) : null}
           <label className="block text-sm text-zinc-400">
             Describe what you see — no cheating with the original prompt.
             <textarea

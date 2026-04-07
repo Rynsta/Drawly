@@ -31,6 +31,7 @@ function burst() {
 }
 
 function stepLabel(entry: ChainEntry) {
+  if (entry.timedOut) return "Time ran out";
   if (entry.kind === "prompt") return "Original prompt";
   if (entry.kind === "draw") return "Drawing";
   return "Description";
@@ -40,7 +41,12 @@ function BookPage({ entry }: { entry: ChainEntry }) {
   return (
     <div className="flex min-h-[min(420px,62vh)] flex-col">
       <div className="border-b border-white/10 pb-3">
-        <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">
+        <p
+          className={cn(
+            "text-xs uppercase tracking-[0.2em]",
+            entry.timedOut ? "text-amber-400/70" : "text-zinc-500",
+          )}
+        >
           {stepLabel(entry)}
         </p>
         <p className="mt-1 text-sm font-medium text-violet-200">
@@ -48,7 +54,12 @@ function BookPage({ entry }: { entry: ChainEntry }) {
         </p>
       </div>
       <div className="flex flex-1 flex-col justify-center py-4">
-        {entry.text != null && entry.text.length > 0 && (
+        {entry.timedOut && !entry.imageDataUrl && (
+          <p className="text-center text-sm italic text-amber-200/60">
+            {entry.text ?? "(nothing submitted)"}
+          </p>
+        )}
+        {!entry.timedOut && entry.text != null && entry.text.length > 0 && (
           <p className="text-lg leading-relaxed text-zinc-100 md:text-xl">
             {entry.text}
           </p>
@@ -68,7 +79,7 @@ function BookPage({ entry }: { entry: ChainEntry }) {
             />
           </div>
         ) : null}
-        {!entry.text && !entry.imageDataUrl && (
+        {!entry.timedOut && !entry.text && !entry.imageDataUrl && (
           <p className="text-center text-sm text-zinc-500">Empty step</p>
         )}
       </div>
@@ -79,34 +90,38 @@ function BookPage({ entry }: { entry: ChainEntry }) {
 function BookFlipbook({
   book,
   roomCode,
+  page: controlledPage,
+  isHost,
+  onPageChange,
   onBack,
 }: {
   book: Book;
   roomCode: string;
+  page: number;
+  isHost: boolean;
+  onPageChange: (page: number) => void;
   onBack: () => void;
 }) {
   const reduceMotion = useReducedMotion();
-  const [page, setPage] = useState(0);
   const [direction, setDirection] = useState(0);
 
   const entries = book.entries;
   const n = entries.length;
-  const safePage = n > 0 ? Math.min(page, n - 1) : 0;
+  const safePage = n > 0 ? Math.min(controlledPage, n - 1) : 0;
   const entry = n > 0 ? entries[safePage] : null;
-
-  useEffect(() => {
-    if (n > 0 && page > n - 1) setPage(n - 1);
-  }, [n, page]);
 
   const go = useCallback(
     (delta: number) => {
+      if (!isHost) return;
       setDirection(delta > 0 ? 1 : -1);
-      setPage((p) => Math.max(0, Math.min(n - 1, p + delta)));
+      const next = Math.max(0, Math.min(n - 1, safePage + delta));
+      onPageChange(next);
     },
-    [n],
+    [n, isHost, safePage, onPageChange],
   );
 
   useEffect(() => {
+    if (!isHost) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "ArrowLeft") {
         e.preventDefault();
@@ -123,7 +138,7 @@ function BookFlipbook({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [go, onBack]);
+  }, [go, onBack, isHost]);
 
   const downloadCurrentDrawing = () => {
     if (!entry?.imageDataUrl || entry.kind !== "draw") return;
@@ -168,9 +183,11 @@ function BookFlipbook({
   return (
     <>
       <div className="mb-4 flex items-center gap-3">
-        <Button variant="ghost" onClick={onBack}>
-          ← All books
-        </Button>
+        {isHost && (
+          <Button variant="ghost" onClick={onBack}>
+            ← All books
+          </Button>
+        )}
         <h2 className="text-lg font-semibold text-white">
           {book.ownerName}&rsquo;s book
         </h2>
@@ -208,17 +225,21 @@ function BookFlipbook({
       </div>
 
       <div className="mt-6 flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
-        <Button
-          type="button"
-          variant="secondary"
-          className="min-w-[8rem] gap-1"
-          disabled={safePage <= 0}
-          onClick={() => go(-1)}
-          aria-label="Previous page"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          Previous
-        </Button>
+        {isHost ? (
+          <Button
+            type="button"
+            variant="secondary"
+            className="min-w-[8rem] gap-1"
+            disabled={safePage <= 0}
+            onClick={() => go(-1)}
+            aria-label="Previous page"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Previous
+          </Button>
+        ) : (
+          <div className="min-w-[8rem]" />
+        )}
 
         <div className="flex flex-col items-center gap-2">
           <p className="text-sm tabular-nums text-zinc-400">
@@ -238,32 +259,39 @@ function BookFlipbook({
                 role="tab"
                 aria-selected={i === safePage}
                 aria-label={`Go to page ${i + 1}`}
+                disabled={!isHost}
                 onClick={() => {
+                  if (!isHost) return;
                   setDirection(i > safePage ? 1 : -1);
-                  setPage(i);
+                  onPageChange(i);
                 }}
                 className={cn(
                   "h-2 rounded-full transition-all",
                   i === safePage
                     ? "w-6 bg-violet-400"
-                    : "w-2 bg-white/20 hover:bg-white/35",
+                    : "w-2 bg-white/20",
+                  isHost && i !== safePage && "hover:bg-white/35",
                 )}
               />
             ))}
           </div>
         </div>
 
-        <Button
-          type="button"
-          variant="secondary"
-          className="min-w-[8rem] gap-1"
-          disabled={safePage >= n - 1}
-          onClick={() => go(1)}
-          aria-label="Next page"
-        >
-          Next
-          <ChevronRight className="h-4 w-4" />
-        </Button>
+        {isHost ? (
+          <Button
+            type="button"
+            variant="secondary"
+            className="min-w-[8rem] gap-1"
+            disabled={safePage >= n - 1}
+            onClick={() => go(1)}
+            aria-label="Next page"
+          >
+            Next
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        ) : (
+          <div className="min-w-[8rem]" />
+        )}
       </div>
 
       <div className="mt-6 flex justify-center">
@@ -281,12 +309,15 @@ function BookFlipbook({
 
 export function RevealView() {
   const room = useDrawlyStore((s) => s.room);
+  const player = useDrawlyStore((s) => s.player);
   const leaveRoom = useDrawlyStore((s) => s.leaveRoom);
+  const navigateReveal = useDrawlyStore((s) => s.navigateReveal);
   const router = useRouter();
   const [burstDone, setBurstDone] = useState(false);
-  const [selectedBookIdx, setSelectedBookIdx] = useState<number | null>(null);
 
   const books = room?.books ?? [];
+  const isHost = room?.hostId === player.id;
+  const revealNav = room?.revealNav ?? { bookIdx: null, page: 0 };
 
   useEffect(() => {
     if (!burstDone && books.length > 0) {
@@ -294,6 +325,16 @@ export function RevealView() {
       setBurstDone(true);
     }
   }, [burstDone, books.length]);
+
+  const selectBook = (idx: number | null) => {
+    if (!isHost) return;
+    navigateReveal({ bookIdx: idx, page: 0 });
+  };
+
+  const setPage = (page: number) => {
+    if (!isHost) return;
+    navigateReveal({ bookIdx: revealNav.bookIdx, page });
+  };
 
   const share = async () => {
     const url = typeof window !== "undefined" ? window.location.href : "";
@@ -315,8 +356,8 @@ export function RevealView() {
   if (!room) return null;
 
   const selectedBook =
-    selectedBookIdx !== null && books[selectedBookIdx]
-      ? books[selectedBookIdx]
+    revealNav.bookIdx !== null && books[revealNav.bookIdx]
+      ? books[revealNav.bookIdx]
       : null;
 
   return (
@@ -331,8 +372,12 @@ export function RevealView() {
         </motion.h1>
         <p className="mt-2 text-sm text-zinc-400">
           {selectedBook
-            ? "Flip through the pages to walk the full story."
-            : "Pick a book to see how the chain evolved."}
+            ? isHost
+              ? "You're presenting — use the controls to flip pages."
+              : "The host is presenting — sit back and enjoy."
+            : isHost
+              ? "Pick a book to present to everyone."
+              : "Waiting for the host to pick a book…"}
         </p>
       </header>
 
@@ -340,13 +385,16 @@ export function RevealView() {
         <BookFlipbook
           book={selectedBook}
           roomCode={room.code}
-          onBack={() => setSelectedBookIdx(null)}
+          page={revealNav.page}
+          isHost={isHost}
+          onPageChange={setPage}
+          onBack={() => selectBook(null)}
         />
       ) : books.length === 0 ? (
         <GlassCard className="py-12 text-center text-zinc-400">
           No books to show.
         </GlassCard>
-      ) : (
+      ) : isHost ? (
         <ul className="grid gap-4 sm:grid-cols-2">
           {books.map((book, idx) => (
             <motion.li
@@ -358,7 +406,7 @@ export function RevealView() {
               <button
                 type="button"
                 className="group w-full rounded-2xl border border-white/10 bg-night-deep/60 px-5 py-5 text-left transition-all hover:border-violet-400/40 hover:bg-violet-500/5 hover:shadow-lg hover:shadow-violet-900/20"
-                onClick={() => setSelectedBookIdx(idx)}
+                onClick={() => selectBook(idx)}
               >
                 <p className="text-lg font-semibold text-white group-hover:text-violet-200">
                   {book.ownerName}&rsquo;s book
@@ -371,6 +419,15 @@ export function RevealView() {
             </motion.li>
           ))}
         </ul>
+      ) : (
+        <GlassCard className="py-12 text-center">
+          <p className="text-lg text-zinc-300">
+            Waiting for the host to select a book…
+          </p>
+          <p className="mt-2 text-sm text-zinc-500">
+            {books.length} book{books.length !== 1 ? "s" : ""} to explore
+          </p>
+        </GlassCard>
       )}
 
       <div className="mt-10 flex flex-wrap justify-center gap-3">

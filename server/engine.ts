@@ -6,6 +6,7 @@ import {
   type ChainEntry,
   type GamePhase,
   type PublicRoomState,
+  type RevealNav,
   type RoomSettings,
   DEFAULT_SETTINGS,
   PLAYER_LIMITS,
@@ -13,8 +14,8 @@ import {
 } from "../src/lib/game-types";
 import { deleteRoomPersisted, loadRoom, persistRoom } from "./redis-store";
 
-const EMPTY_DRAW_DATA_URL =
-  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+/** Extra seconds after the visible timer reaches zero before the server force-submits. */
+const TIMER_GRACE_SEC = 4;
 
 function shuffleInPlace<T>(arr: T[]) {
   for (let i = arr.length - 1; i > 0; i--) {
@@ -44,6 +45,7 @@ export interface SerializedRoom {
   pendingPlayers: string[];
   turnEndsAt: number | null;
   turnTimer: ReturnType<typeof setTimeout> | null;
+  revealNav: RevealNav;
 }
 
 function sanitizeSettings(s: Partial<RoomSettings>): RoomSettings {
@@ -157,6 +159,7 @@ export class RoomManager {
       pendingPlayerIds: [...room.pendingPlayers],
       books,
       bookSummaries,
+      revealNav: room.revealNav,
     };
   }
 
@@ -182,6 +185,7 @@ export class RoomManager {
       pendingPlayers: [],
       turnEndsAt: null,
       turnTimer: null,
+      revealNav: { bookIdx: null, page: 0 },
     };
     this.rooms.set(code, room);
     void this.save(room);
@@ -290,7 +294,9 @@ export class RoomManager {
     return room;
   }
 
-  /** Schedule the end-of-round timer. */
+  /** Schedule the end-of-round timer. The visible timer shows `sec` seconds,
+   *  but the server waits an extra TIMER_GRACE_SEC so client auto-submits
+   *  have time to arrive before the server inserts placeholders. */
   private scheduleTurnEnd(room: SerializedRoom, io: Server) {
     this.clearTurnTimer(room);
     const kind = roundKind(room.currentRound);
@@ -304,7 +310,7 @@ export class RoomManager {
     room.turnEndsAt = ends;
     room.turnTimer = setTimeout(() => {
       this.handleTimerExpiry(room.code, io);
-    }, sec * 1000);
+    }, (sec + TIMER_GRACE_SEC) * 1000);
   }
 
   /** Timer fires: auto-submit placeholder for all pending players. */
@@ -327,12 +333,11 @@ export class RoomManager {
         kind,
         playerId: pid,
         playerName: player.name,
+        timedOut: true,
       };
 
       if (kind === "draw") {
-        entry.imageDataUrl = EMPTY_DRAW_DATA_URL;
-      } else if (kind === "prompt") {
-        entry.text = "(time ran out)";
+        entry.text = "(no drawing submitted)";
       } else {
         entry.text = "(time ran out)";
       }
@@ -465,6 +470,20 @@ export class RoomManager {
     void this.save(room);
     io.to(room.code).emit("room:state", this.publicState(room));
     this.emitAssignments(room, io);
+  }
+
+  setRevealNav(
+    code: string,
+    hostId: string,
+    nav: RevealNav,
+    io: Server,
+  ): boolean {
+    const room = this.rooms.get(code.toUpperCase());
+    if (!room || room.phase !== "reveal" || room.hostId !== hostId) return false;
+    room.revealNav = nav;
+    io.to(room.code).emit("reveal:nav", nav);
+    void this.save(room);
+    return true;
   }
 
   lookupBySocket(

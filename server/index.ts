@@ -222,6 +222,24 @@ io.on("connection", (socket: Sock) => {
     },
   );
 
+  socket.on(
+    "reveal:navigate",
+    (payload: { bookIdx: number | null; page: number }) => {
+      const code = socket.data.roomCode as string | undefined;
+      const playerId = socket.data.playerId as string | undefined;
+      if (!code || !playerId) return;
+      rooms.setRevealNav(
+        code,
+        playerId,
+        {
+          bookIdx: payload?.bookIdx ?? null,
+          page: typeof payload?.page === "number" ? payload.page : 0,
+        },
+        io,
+      );
+    },
+  );
+
   socket.on("disconnect", () => {
     const hit = rooms.disconnectSocket(socket.id);
     if (hit) {

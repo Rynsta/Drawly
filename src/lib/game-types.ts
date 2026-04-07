@@ -18,6 +18,7 @@ export interface ChainEntry {
   playerName: string;
   text?: string;
   imageDataUrl?: string;
+  timedOut?: boolean;
 }
 
 export interface Book {
@@ -45,6 +46,11 @@ export interface RoomSettings {
   describeMaxChars: number;
 }
 
+export interface RevealNav {
+  bookIdx: number | null;
+  page: number;
+}
+
 export interface PublicRoomState {
   code: string;
   phase: GamePhase;
@@ -57,6 +63,7 @@ export interface PublicRoomState {
   pendingPlayerIds: string[];
   books: Book[];
   bookSummaries: BookSummary[];
+  revealNav: RevealNav;
 }
 
 export function roundKind(round: number): SegmentKind {
