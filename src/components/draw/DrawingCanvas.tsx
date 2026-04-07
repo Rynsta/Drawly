@@ -953,10 +953,10 @@ export function DrawingCanvas({
             onClick={() => pickTool(id)}
             className={cn(
               "flex h-11 w-11 items-center justify-center rounded-2xl border transition-all duration-200 ease-out",
-              "hover:-translate-y-1 hover:shadow-lg hover:shadow-violet-500/15",
+              "hover:-translate-y-1 hover:shadow-lg hover:shadow-blue-500/15",
               "active:translate-y-0 active:scale-[0.96] disabled:pointer-events-none disabled:opacity-40",
               activeTool === id
-                ? "border-violet-400/45 bg-gradient-to-br from-violet-500/35 to-fuchsia-600/25 text-white shadow-md shadow-violet-900/30"
+                ? "border-blue-400/50 bg-gradient-to-br from-blue-500/35 to-pink-500/20 text-white shadow-md shadow-blue-900/30"
                 : "border-white/15 bg-white/[0.07] text-zinc-200 hover:border-white/25 hover:bg-white/12",
             )}
           >
@@ -999,7 +999,7 @@ export function DrawingCanvas({
             spellCheck={false}
             maxLength={7}
             disabled={disabled}
-            className="w-[5.5rem] rounded-md border border-white/10 bg-night px-2 py-1 font-mono text-xs text-white outline-none focus:ring-1 focus:ring-violet-500"
+            className="w-[5.5rem] rounded-md border border-white/10 bg-night px-2 py-1 font-mono text-xs text-white outline-none focus:ring-1 focus:ring-blue-500"
             placeholder="#000000"
           />
         </div>
@@ -1030,7 +1030,7 @@ export function DrawingCanvas({
           }}
           onBlur={() => setBrushSize((s) => clampBrushSize(s))}
           aria-label="Brush size"
-          className="w-[3.25rem] rounded-lg border border-white/15 bg-night px-1.5 py-1.5 text-center font-mono text-xs tabular-nums text-zinc-100 outline-none focus:ring-1 focus:ring-violet-500 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+          className="w-[3.25rem] rounded-lg border border-white/15 bg-night px-1.5 py-1.5 text-center font-mono text-xs tabular-nums text-zinc-100 outline-none focus:ring-1 focus:ring-blue-500 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
         />
         <span className="text-xs tabular-nums text-zinc-500">px</span>
         <Button

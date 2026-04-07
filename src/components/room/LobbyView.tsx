@@ -63,19 +63,19 @@ export function LobbyView() {
               <button
                 type="button"
                 onClick={copyCode}
-                className="group inline-flex items-center gap-3 rounded-2xl border border-amber-500/25 bg-amber-500/10 px-5 py-3 transition-all hover:border-amber-400/40 hover:bg-amber-500/15"
+                className="group inline-flex items-center gap-3 rounded-2xl border border-blue-500/25 bg-blue-500/10 px-5 py-3 transition-all hover:border-blue-400/40 hover:bg-blue-500/15"
               >
-                <span className="font-mono text-2xl font-bold tracking-[0.25em] text-amber-300 md:text-3xl">
+                <span className="font-mono text-2xl font-bold tracking-[0.25em] text-blue-300 md:text-3xl">
                   {room.code}
                 </span>
-                <span className="rounded-lg bg-amber-500/15 px-2 py-0.5 text-xs font-semibold text-amber-400 ring-1 ring-amber-500/25 transition-colors group-hover:bg-amber-500/25">
+                <span className="rounded-lg bg-blue-500/15 px-2 py-0.5 text-xs font-semibold text-blue-400 ring-1 ring-blue-500/25 transition-colors group-hover:bg-blue-500/25">
                   {codeCopied ? "Copied!" : "Copy"}
                 </span>
               </button>
             </div>
           ) : (
-            <p className="mt-2 flex items-center gap-1.5 text-sm text-amber-300/90">
-              <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-amber-400" />
+            <p className="mt-2 flex items-center gap-1.5 text-sm text-orange-300/90">
+              <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-orange-400" />
               Connecting to server…
             </p>
           )}
@@ -107,7 +107,7 @@ export function LobbyView() {
                 Display name
               </span>
               <input
-                className="w-full rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white outline-none transition-all placeholder:text-zinc-600 focus:border-violet-500/50 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.18)]"
+                className="w-full rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white outline-none transition-all placeholder:text-zinc-600 focus:border-blue-500/50 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.18)]"
                 value={player.name}
                 placeholder="Your name"
                 maxLength={24}
@@ -127,7 +127,7 @@ export function LobbyView() {
                     className={cn(
                       "rounded-lg p-1.5 text-lg transition-all hover:scale-110 hover:bg-white/10",
                       player.emoji === em &&
-                        "bg-white/15 ring-1 ring-violet-400/60 shadow-[0_0_12px_rgba(167,139,250,0.25)]",
+                        "bg-white/15 ring-1 ring-blue-400/60 shadow-[0_0_12px_rgba(96,165,250,0.25)]",
                     )}
                     onClick={() => {
                       setPlayer({ emoji: em });
@@ -153,7 +153,7 @@ export function LobbyView() {
                   className={cn(
                     "h-8 w-8 rounded-full transition-all duration-150 hover:scale-110",
                     player.color === c
-                      ? "ring-2 ring-white ring-offset-2 ring-offset-[#0c0c14] scale-110"
+                      ? "scale-110 ring-2 ring-white ring-offset-2 ring-offset-[#080c16]"
                       : "ring-1 ring-white/10",
                   )}
                   style={{ backgroundColor: c }}
@@ -191,8 +191,8 @@ export function LobbyView() {
             </div>
           </div>
 
-          <div className="mb-5 rounded-xl border border-violet-500/20 bg-violet-500/[0.08] px-4 py-3">
-            <p className="text-sm text-violet-100">
+          <div className="mb-5 rounded-xl border border-blue-500/20 bg-blue-500/[0.08] px-4 py-3">
+            <p className="text-sm text-blue-100">
               Everyone starts a book that gets passed around —{" "}
               <span className="font-semibold text-white">
                 {room.players.length} player
@@ -209,7 +209,7 @@ export function LobbyView() {
                 <label className="text-xs font-medium text-zinc-400">
                   Prompt time
                 </label>
-                <span className="rounded-lg bg-violet-500/15 px-2 py-0.5 font-mono text-xs font-bold text-violet-300">
+                <span className="rounded-lg bg-blue-500/15 px-2 py-0.5 font-mono text-xs font-bold text-blue-300">
                   {room.settings.promptSeconds}s
                 </span>
               </div>
@@ -230,7 +230,7 @@ export function LobbyView() {
                 <label className="text-xs font-medium text-zinc-400">
                   Draw time
                 </label>
-                <span className="rounded-lg bg-amber-500/15 px-2 py-0.5 font-mono text-xs font-bold text-amber-300">
+                <span className="rounded-lg bg-orange-500/15 px-2 py-0.5 font-mono text-xs font-bold text-orange-300">
                   {room.settings.drawSeconds}s
                 </span>
               </div>
@@ -243,7 +243,7 @@ export function LobbyView() {
                 onChange={(e) =>
                   updateSettings({ drawSeconds: Number(e.target.value) })
                 }
-                className="w-full accent-amber-500 disabled:opacity-40"
+                className="w-full accent-orange-500 disabled:opacity-40"
               />
             </div>
             <div>
@@ -283,11 +283,15 @@ export function LobbyView() {
                   }
                 }}
               >
-                {starting ? "Starting…" : canStart ? "🚀 Start game" : "Waiting for everyone…"}
+                {starting
+                  ? "Starting…"
+                  : canStart
+                    ? "🚀 Start game"
+                    : "Waiting for everyone…"}
               </Button>
             ) : (
               <div className="flex items-center gap-2 text-sm text-zinc-400">
-                <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-violet-400" />
+                <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-blue-400" />
                 Waiting for host to start…
               </div>
             )}
@@ -334,7 +338,7 @@ export function LobbyView() {
                 <p className="flex items-center gap-1.5 truncate text-sm font-semibold text-white">
                   {p.name}
                   {p.isHost && (
-                    <span className="rounded-full bg-violet-500/20 px-1.5 py-0.5 text-[10px] font-bold text-violet-300 ring-1 ring-violet-500/30">
+                    <span className="rounded-full bg-blue-500/20 px-1.5 py-0.5 text-[10px] font-bold text-blue-300 ring-1 ring-blue-500/30">
                       HOST
                     </span>
                   )}

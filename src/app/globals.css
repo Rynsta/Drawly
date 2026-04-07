@@ -3,9 +3,9 @@
 @tailwind utilities;
 
 :root {
-  --background: #0c0c14;
+  --background: #080c16;
   --foreground: #f4f4f5;
-  --accent: #a78bfa;
+  --accent: #60a5fa;
   --accent-hot: #f472b6;
 }
 
@@ -28,11 +28,11 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(167, 139, 250, 0.2);
+  background: rgba(96, 165, 250, 0.2);
   border-radius: 99px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(167, 139, 250, 0.4);
+  background: rgba(96, 165, 250, 0.4);
 }
 
 /* Range input — fully custom */
@@ -52,19 +52,19 @@ input[type="range"]::-webkit-slider-thumb {
   height: 18px;
   border-radius: 50%;
   background: var(--accent);
-  box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.2), 0 2px 8px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2), 0 2px 8px rgba(0, 0, 0, 0.5);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 input[type="range"]::-webkit-slider-thumb:hover {
   transform: scale(1.2);
-  box-shadow: 0 0 0 6px rgba(167, 139, 250, 0.15), 0 0 20px rgba(167, 139, 250, 0.5);
+  box-shadow: 0 0 0 6px rgba(96, 165, 250, 0.15), 0 0 20px rgba(96, 165, 250, 0.5);
 }
-input[type="range"].accent-amber-500::-webkit-slider-thumb {
-  background: #f59e0b;
-  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2), 0 2px 8px rgba(0, 0, 0, 0.5);
+input[type="range"].accent-orange-500::-webkit-slider-thumb {
+  background: #f97316;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2), 0 2px 8px rgba(0, 0, 0, 0.5);
 }
-input[type="range"].accent-amber-500::-webkit-slider-thumb:hover {
-  box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.15), 0 0 20px rgba(245, 158, 11, 0.5);
+input[type="range"].accent-orange-500::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 0 6px rgba(249, 115, 22, 0.15), 0 0 20px rgba(249, 115, 22, 0.5);
 }
 input[type="range"].accent-pink-500::-webkit-slider-thumb {
   background: #ec4899;
@@ -84,7 +84,7 @@ input[type="range"]::-moz-range-thumb {
   height: 18px;
   border-radius: 50%;
   background: var(--accent);
-  box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.2);
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
 }
 
 @layer utilities {
@@ -111,8 +111,8 @@ input[type="range"]::-moz-range-thumb {
     padding: 1px;
     background: linear-gradient(
       148deg,
-      rgba(255, 255, 255, 0.24) 0%,
-      rgba(167, 139, 250, 0.12) 35%,
+      rgba(255, 255, 255, 0.22) 0%,
+      rgba(96, 165, 250, 0.14) 35%,
       rgba(255, 255, 255, 0.03) 65%,
       rgba(244, 114, 182, 0.1) 100%
     );
@@ -128,33 +128,33 @@ input[type="range"]::-moz-range-thumb {
     @apply bg-clip-text text-transparent;
     background-image: linear-gradient(
       135deg,
-      #c4b5fd 0%,
-      #f472b6 42%,
-      #fbbf24 100%
+      #93c5fd 0%,
+      #f472b6 45%,
+      #fb923c 100%
     );
   }
 
   .bg-page {
-    background-color: #0c0c14;
+    background-color: #080c16;
     background-image:
       radial-gradient(
         ellipse 140% 90% at 15% -5%,
-        rgba(139, 92, 246, 0.55),
+        rgba(59, 130, 246, 0.5),
         transparent 52%
       ),
       radial-gradient(
         ellipse 90% 65% at 92% 25%,
-        rgba(236, 72, 153, 0.3),
+        rgba(236, 72, 153, 0.28),
         transparent 48%
       ),
       radial-gradient(
         ellipse 70% 55% at 5% 95%,
-        rgba(251, 191, 36, 0.2),
+        rgba(249, 115, 22, 0.22),
         transparent 45%
       ),
       radial-gradient(
         ellipse 55% 45% at 75% 85%,
-        rgba(99, 102, 241, 0.18),
+        rgba(20, 184, 166, 0.16),
         transparent 42%
       );
     background-size: 200% 200%, 180% 180%, 160% 160%, 140% 140%;
@@ -239,9 +239,9 @@ input[type="range"]::-moz-range-thumb {
   transform-origin: left center;
   background-image: linear-gradient(
     135deg,
-    #c4b5fd 0%,
-    #f472b6 42%,
-    #fbbf24 100%
+    #93c5fd 0%,
+    #f472b6 45%,
+    #fb923c 100%
   );
   -webkit-background-clip: text;
   background-clip: text;

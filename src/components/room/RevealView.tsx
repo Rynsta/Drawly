@@ -16,7 +16,7 @@ function burst() {
     ...c,
     particleCount: 90,
     spread: 70,
-    colors: ["#a78bfa", "#fbbf24", "#f472b6"],
+    colors: ["#60a5fa", "#f472b6", "#fb923c"],
   });
   setTimeout(() => {
     void confetti({
@@ -24,7 +24,7 @@ function burst() {
       particleCount: 50,
       angle: 60,
       spread: 55,
-      colors: ["#fbbf24", "#f472b6"],
+      colors: ["#fb923c", "#f472b6"],
     });
   }, 180);
 }
@@ -32,8 +32,8 @@ function burst() {
 const ENTRY_KIND_META = {
   prompt: {
     label: "The starting prompt",
-    badge: "bg-violet-500/20 text-violet-300 ring-violet-500/30",
-    border: "border-violet-500/20",
+    badge: "bg-blue-500/20 text-blue-300 ring-blue-500/30",
+    border: "border-blue-500/20",
     icon: "💬",
   },
   draw: {
@@ -44,8 +44,8 @@ const ENTRY_KIND_META = {
   },
   describe: {
     label: "What they saw",
-    badge: "bg-amber-500/20 text-amber-300 ring-amber-500/30",
-    border: "border-amber-500/20",
+    badge: "bg-orange-500/20 text-orange-300 ring-orange-500/30",
+    border: "border-orange-500/20",
     icon: "🔍",
   },
 };
@@ -75,12 +75,12 @@ function EntryCard({ entry, index }: { entry: ChainEntry; index: number }) {
         className={cn(
           "overflow-hidden rounded-2xl border",
           entry.timedOut
-            ? "border-amber-500/25 bg-amber-950/20"
-            : `${meta.border} bg-[#0c0c14]/70`,
+            ? "border-orange-500/25 bg-orange-950/20"
+            : `${meta.border} bg-[#080c16]/70`,
         )}
         style={{
           boxShadow: entry.timedOut
-            ? "0 4px 24px -8px rgba(245,158,11,0.15)"
+            ? "0 4px 24px -8px rgba(249,115,22,0.15)"
             : "0 4px 24px -8px rgba(0,0,0,0.5)",
         }}
       >
@@ -91,7 +91,7 @@ function EntryCard({ entry, index }: { entry: ChainEntry; index: number }) {
             className={cn(
               "rounded-full px-2.5 py-0.5 text-xs font-bold ring-1",
               entry.timedOut
-                ? "bg-amber-500/20 text-amber-400 ring-amber-500/30"
+                ? "bg-orange-500/20 text-orange-400 ring-orange-500/30"
                 : meta.badge,
             )}
           >
@@ -105,7 +105,7 @@ function EntryCard({ entry, index }: { entry: ChainEntry; index: number }) {
         {/* Content */}
         <div className="px-5 py-5">
           {entry.timedOut && !entry.imageDataUrl && (
-            <p className="text-center text-sm italic text-amber-200/50">
+            <p className="text-center text-sm italic text-orange-200/50">
               {entry.text ?? "(nothing submitted)"}
             </p>
           )}
@@ -247,9 +247,7 @@ function BookReveal({
               key={i}
               className={cn(
                 "h-1.5 rounded-full transition-all duration-300",
-                i < shown
-                  ? "w-4 bg-violet-400"
-                  : "w-1.5 bg-white/20",
+                i < shown ? "w-4 bg-blue-400" : "w-1.5 bg-white/20",
               )}
             />
           ))}
@@ -272,14 +270,14 @@ function BookReveal({
 }
 
 const BOOK_COLORS = [
-  "from-violet-600/30 to-violet-900/10 border-violet-500/25",
+  "from-blue-600/30 to-blue-900/10 border-blue-500/25",
   "from-pink-600/30 to-pink-900/10 border-pink-500/25",
-  "from-amber-600/30 to-amber-900/10 border-amber-500/25",
+  "from-orange-600/30 to-orange-900/10 border-orange-500/25",
   "from-cyan-600/30 to-cyan-900/10 border-cyan-500/25",
   "from-emerald-600/30 to-emerald-900/10 border-emerald-500/25",
   "from-rose-600/30 to-rose-900/10 border-rose-500/25",
-  "from-indigo-600/30 to-indigo-900/10 border-indigo-500/25",
-  "from-orange-600/30 to-orange-900/10 border-orange-500/25",
+  "from-sky-600/30 to-sky-900/10 border-sky-500/25",
+  "from-teal-600/30 to-teal-900/10 border-teal-500/25",
 ];
 
 export function RevealView() {
@@ -375,8 +373,7 @@ export function RevealView() {
       ) : isHost ? (
         <ul className="grid gap-4 sm:grid-cols-2">
           {books.map((book, idx) => {
-            const colorClass =
-              BOOK_COLORS[idx % BOOK_COLORS.length];
+            const colorClass = BOOK_COLORS[idx % BOOK_COLORS.length];
             return (
               <motion.li
                 key={book.ownerId}
@@ -389,7 +386,7 @@ export function RevealView() {
                   className={`group w-full overflow-hidden rounded-2xl border bg-gradient-to-br px-5 py-5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg ${colorClass}`}
                   onClick={() => selectBook(idx)}
                 >
-                  <p className="font-display text-lg font-bold text-white transition-colors group-hover:text-white">
+                  <p className="font-display text-lg font-bold text-white">
                     {book.ownerName}&rsquo;s book
                   </p>
                   <p className="mt-1 text-sm text-zinc-400">

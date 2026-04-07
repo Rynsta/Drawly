@@ -18,30 +18,30 @@ const SOCKET_HELP_DELAY_MS = 1200;
 const STEPS = [
   {
     n: "1",
-    color: "text-violet-300",
-    ring: "ring-violet-500/40",
-    bg: "bg-violet-500/15",
+    color: "text-blue-300",
+    ring: "ring-blue-500/40",
+    bg: "bg-blue-500/15",
     text: "Someone writes a weird prompt.",
   },
   {
     n: "2",
-    color: "text-fuchsia-300",
-    ring: "ring-fuchsia-500/40",
-    bg: "bg-fuchsia-500/15",
+    color: "text-pink-300",
+    ring: "ring-pink-500/40",
+    bg: "bg-pink-500/15",
     text: "Next person draws it. No words, just vibes.",
   },
   {
     n: "3",
-    color: "text-pink-300",
-    ring: "ring-pink-500/40",
-    bg: "bg-pink-500/15",
+    color: "text-sky-300",
+    ring: "ring-sky-500/40",
+    bg: "bg-sky-500/15",
     text: "They only see the drawing and write what they think it is.",
   },
   {
     n: "4",
-    color: "text-amber-300",
-    ring: "ring-amber-500/40",
-    bg: "bg-amber-500/15",
+    color: "text-orange-300",
+    ring: "ring-orange-500/40",
+    bg: "bg-orange-500/15",
     text: "Keep going until everyone's had a turn, then watch it all go wrong.",
   },
 ];
@@ -117,9 +117,9 @@ export default function HomePage() {
           <motion.p
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-2 rounded-full bg-pink-500/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-pink-300 ring-1 ring-pink-500/25"
+            className="inline-flex items-center gap-2 rounded-full bg-blue-500/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-blue-300 ring-1 ring-blue-500/25"
           >
-            <span className="h-1.5 w-1.5 rounded-full bg-pink-400" />
+            <span className="h-1.5 w-1.5 rounded-full bg-blue-400" />
             Party game
           </motion.p>
           <DrawlyDrawnTitle />
@@ -141,7 +141,7 @@ export default function HomePage() {
             <motion.div
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mt-4 max-w-xl space-y-2 rounded-xl border border-amber-500/20 bg-amber-500/8 px-4 py-3 text-sm text-amber-200/85"
+              className="mt-4 max-w-xl space-y-2 rounded-xl border border-orange-500/20 bg-orange-500/[0.08] px-4 py-3 text-sm text-orange-200/85"
             >
               <p>
                 Waiting for the realtime server. In the project folder run{" "}

@@ -9,8 +9,8 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        night: "#111118",
-        "night-deep": "#0a0a12",
+        night: "#080c16",
+        "night-deep": "#050810",
         glass: "rgba(255,255,255,0.08)",
         "glass-border": "rgba(255,255,255,0.14)",
       },
@@ -27,9 +27,9 @@ const config: Config = {
         ],
       },
       boxShadow: {
-        glow: "0 0 60px -12px rgba(167, 139, 250, 0.45)",
+        glow: "0 0 60px -12px rgba(96, 165, 250, 0.5)",
         "glow-pink": "0 0 50px -10px rgba(244, 114, 182, 0.4)",
-        "glow-gold": "0 0 45px -10px rgba(251, 191, 36, 0.35)",
+        "glow-orange": "0 0 45px -10px rgba(251, 146, 60, 0.4)",
       },
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",

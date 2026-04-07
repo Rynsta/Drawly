@@ -22,7 +22,7 @@ export function Button({
       className={cn(
         "inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 font-display text-sm font-semibold transition-all duration-200 active:scale-[0.97] disabled:pointer-events-none disabled:opacity-40",
         variant === "primary" &&
-          "bg-gradient-to-r from-violet-600 via-fuchsia-500 to-amber-400 text-white shadow-[0_4px_20px_-4px_rgba(167,139,250,0.5)] hover:-translate-y-0.5 hover:shadow-[0_8px_32px_-4px_rgba(167,139,250,0.6)] hover:brightness-110 active:translate-y-0",
+          "bg-gradient-to-r from-blue-500 via-pink-500 to-orange-400 text-white shadow-[0_4px_20px_-4px_rgba(96,165,250,0.5)] hover:-translate-y-0.5 hover:shadow-[0_8px_32px_-4px_rgba(96,165,250,0.6)] hover:brightness-110 active:translate-y-0",
         variant === "secondary" &&
           "border border-white/15 bg-white/[0.07] text-zinc-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] hover:border-white/25 hover:bg-white/[0.12] hover:text-white",
         variant === "ghost" &&

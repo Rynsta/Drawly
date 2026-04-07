@@ -43,13 +43,13 @@ export function TurnTimer({ endsAt }: { endsAt: number | null }) {
         critical
           ? "timer-urgent bg-red-500/20 text-red-200 ring-red-400/50"
           : urgent
-            ? "bg-amber-500/20 text-amber-200 ring-amber-400/40"
+            ? "bg-orange-500/20 text-orange-200 ring-orange-400/40"
             : "bg-white/[0.06] text-zinc-200 ring-white/10"
       }`}
     >
       {urgent && (
         <span
-          className={`h-2 w-2 rounded-full ${critical ? "animate-ping bg-red-400" : "bg-amber-400 pulse-ready"}`}
+          className={`h-2 w-2 rounded-full ${critical ? "animate-ping bg-red-400" : "bg-orange-400 pulse-ready"}`}
         />
       )}
       <span className={`tabular-nums ${urgent ? "text-base" : ""}`}>
