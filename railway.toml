@@ -1,0 +1,4 @@
+# Railway: run the Socket.io server, not Next.js (`npm start`).
+# https://docs.railway.com/guides/config-as-code
+[deploy]
+startCommand = "npm run start:socket"
