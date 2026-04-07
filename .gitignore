@@ -26,7 +26,22 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
+.env
 .env*.local
+
+# Extra env (already ignoring .env above)
+.env.production.local
+
+# Cursor / agent context (optional local docs — not for public clones)
+CURSOR.md
+memory/
+.cursor/
+
+# OS / editor
+Thumbs.db
+*.swp
+*.swo
+*~
 
 # vercel
 .vercel
@@ -34,3 +49,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/

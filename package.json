@@ -3,24 +3,48 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "concurrently -n next,socket -c blue,magenta \"next dev -p 3000\" \"tsx watch server/index.ts\"",
+    "dev:reset": "npx --yes kill-port 3000 3001 3002 4000",
+    "dev:next": "next dev -p 3000",
+    "dev:socket": "tsx watch server/index.ts",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "start:socket": "tsx server/index.ts",
+    "lint": "next lint",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@upstash/redis": "^1.37.0",
+    "canvas-confetti": "^1.9.4",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.1",
+    "express": "^5.2.1",
+    "framer-motion": "^12.38.0",
+    "lucide-react": "^0.468.0",
+    "next": "14.2.35",
+    "perfect-freehand": "^1.2.3",
     "react": "^18",
     "react-dom": "^18",
-    "next": "14.2.35"
+    "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3",
+    "uuid": "^13.0.0",
+    "zustand": "^5.0.12"
   },
   "devDependencies": {
-    "typescript": "^5",
+    "@playwright/test": "^1.49.1",
+    "@types/canvas-confetti": "^1.9.0",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "@types/uuid": "^10.0.0",
+    "concurrently": "^9.2.1",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.35",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
-    "eslint": "^8",
-    "eslint-config-next": "14.2.35"
+    "tsx": "^4.21.0",
+    "typescript": "^5"
   }
 }
