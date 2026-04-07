@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js 14" />
+  <img src="https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js 15" />
   <img src="https://img.shields.io/badge/Socket.io-realtime-010101?style=for-the-badge&logo=socket.io&logoColor=white" alt="Socket.io" />
   <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
   <img src="https://img.shields.io/badge/Tailwind-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" alt="Tailwind" />
@@ -38,7 +38,6 @@ This project is a **Next.js** frontend plus a **Socket.io** game server in one t
 │   ├── hooks/
 │   └── lib/                # Zustand store, socket client, shared game types
 ├── e2e/                    # Playwright tests
-├── drawly/                 # Nested git repo (submodule) — optional standalone checkout
 ├── railway.toml            # Socket service process (e.g. Railway)
 ├── next.config.mjs
 ├── playwright.config.ts
@@ -53,6 +52,12 @@ Shared types for the client and server live in **`src/lib/game-types.ts`** (the 
 ## Stack
 
 Next.js (App Router), React, Tailwind CSS, Framer Motion, Zustand, Socket.io, **perfect-freehand** for drawing, Lucide icons.
+
+---
+
+## Security
+
+See [SECURITY.md](./SECURITY.md) for how to report issues, handling of secrets, dependency checks (`npm audit`), and the **threat model** for the unauthenticated realtime game (player IDs in rooms, no rate limits, CORS configuration).
 
 ---
 

@@ -12,7 +12,7 @@ test.describe("Drawly browser smoke", () => {
     await expect(createBtn).toBeEnabled({ timeout: 45_000 });
 
     await page
-      .getByPlaceholder("How should we shout at you?")
+      .getByPlaceholder("What do your friends call you?")
       .fill("Playwright Bot");
     await createBtn.click();
 
@@ -27,19 +27,19 @@ test.describe("Drawly browser smoke", () => {
 
     // Solo game: 1 player = 1 round = prompt only
     await expect(
-      page.getByRole("heading", { name: "Write a starting prompt" }),
+      page.getByRole("heading", { name: "Write the first prompt" }),
     ).toBeVisible();
 
     await expect(page.getByText("Round 1 / 1")).toBeVisible();
 
     await page
-      .getByPlaceholder("e.g. A nervous toaster at a talent show…")
+      .getByPlaceholder("e.g. A cat trying to parallel park…")
       .fill("A robot eating spaghetti on the moon");
-    await page.getByRole("button", { name: "Lock in prompt" }).click();
+    await page.getByRole("button", { name: "Lock it in" }).click();
 
     // After solo prompt, game should go straight to reveal
     await expect(
-      page.getByRole("heading", { name: "The Reveal" }),
+      page.getByRole("heading", { name: "The Big Reveal" }),
     ).toBeVisible({ timeout: 10_000 });
 
     // Should see a book to click
@@ -52,7 +52,7 @@ test.describe("Drawly browser smoke", () => {
 
     // Should see the prompt entry
     await expect(page.getByText("A robot eating spaghetti on the moon")).toBeVisible();
-    await expect(page.getByText("Original prompt")).toBeVisible();
+    await expect(page.getByText("The starting prompt")).toBeVisible();
   });
 
   test("font, animated background, drawing tools presence", async ({
@@ -67,7 +67,7 @@ test.describe("Drawly browser smoke", () => {
     const bodyFont = await page.evaluate(
       () => getComputedStyle(document.body).fontFamily,
     );
-    expect(bodyFont).toMatch(/0xProto|ProtoNerd|__0xProto/i);
+    expect(bodyFont).toMatch(/Nunito|Fredoka/i);
 
     const bgMotion = await page.locator(".bg-page").first().evaluate((el) => {
       const s = getComputedStyle(el);
