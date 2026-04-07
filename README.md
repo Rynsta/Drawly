@@ -9,132 +9,53 @@
 
 <p align="center">
   <strong>Draw → describe → repeat → reveal.</strong><br />
-  A real-time party game: chained prompts, sketches, and guesses—ending in a flip-book style chain reveal you can walk through page by page.
+  A real-time party game: chained prompts, sketches, and guesses, ending in a flip-book style chain reveal.
 </p>
 
 <p align="center">
-  <a href="#quick-start">Quick start</a> ·
-  <a href="#play-with-friends-same-wi-fi">Friends on Wi‑Fi</a> ·
-  <a href="#deploy-for-the-internet">Deploy online</a> ·
-  <a href="#scripts">Scripts</a>
+  <a href="https://drawly-khaki.vercel.app/"><strong>Play Drawly</strong></a>
+  &nbsp;·&nbsp;
+  <a href="https://github.com/rpaiMC/Drawly"><strong>Source on GitHub</strong></a>
 </p>
 
 ---
 
+## Repository layout
 
-## Quick start
+This project is a **Next.js** frontend plus a **Socket.io** game server in one tree.
 
-```bash
-git clone https://github.com/YOUR_USERNAME/drawly.git
-cd drawly
-npm install
-cp .env.example .env.local
-npm run dev
+```
+.
+├── server/                 # Socket.io + Express; game engine and room state
+│   ├── index.ts            # Server entry
+│   ├── socket-handlers.ts  # Room / game / reveal socket events
+│   ├── engine.ts           # Rounds, timers, submissions, books
+│   ├── redis-store.ts      # Optional Upstash Redis persistence
+│   └── scripts/            # Small local checks (timeout submit, socket dummies)
+├── src/
+│   ├── app/                # App Router: pages and layout
+│   ├── components/         # Lobby, game, reveal, canvas, UI
+│   ├── hooks/
+│   └── lib/                # Zustand store, socket client, shared game types
+├── e2e/                    # Playwright tests
+├── drawly/                 # Nested git repo (submodule) — optional standalone checkout
+├── railway.toml            # Socket service process (e.g. Railway)
+├── next.config.mjs
+├── playwright.config.ts
+├── tailwind.config.ts
+└── package.json
 ```
 
-Open **`http://localhost:3000`** (use `localhost`, not `127.0.0.1`, unless you add it to `CLIENT_ORIGIN`).
-
-`npm run dev` starts **both** the Next.js app (port **3000**) and the **Socket.io** server (port **4000**). If ports are stuck:
-
-```bash
-npm run dev:reset
-npm run dev
-```
-
----
-
-## Play with friends (same Wi‑Fi)
-
-Friends’ browsers must talk to **your computer’s IP**, not `localhost` (localhost always means *their* machine).
-
-1. On the host PC, find your LAN IP:
-   - **Windows:** `ipconfig` → IPv4 address (e.g. `192.168.1.42`)
-   - **macOS/Linux:** `ip addr` / `ifconfig`
-2. Copy **`env.lan.example`** → **`.env.local`** and replace `192.168.x.x` with that IP everywhere.
-3. Restart **`npm run dev`**.
-4. **Firewall:** allow inbound **TCP 3000** and **4000** on private networks (Windows Defender Firewall).
-5. Share **`http://YOUR_LAN_IP:3000`** with friends on the same network.
-
-Everyone uses the same URL; the app will use your IP for the socket as well.
-
----
-
-## Deploy (for the internet)
-
-Drawly is **two processes**:
-
-| Piece | Where it runs | Notes |
-|--------|----------------|--------|
-| **Next.js** | [Vercel](https://vercel.com), Netlify, etc. | `npm run build` — no Socket.io on the edge |
-| **Socket server** | [Railway](https://railway.app), [Render](https://render.com), [Fly.io](https://fly.io), any VPS | Run `npm run start:socket` — host sets **`PORT`**; the server listens on `PORT` or `SOCKET_PORT` |
-
-### Environment variables (production)
-
-Set these on **both** sides where applicable:
-
-| Variable | Where | Purpose |
-|----------|--------|---------|
-| `NEXT_PUBLIC_SOCKET_URL` | Next (build time) | Public URL of your socket server, e.g. `https://drawly-socket.railway.app` |
-| `NEXT_PUBLIC_APP_URL` | Next | Your live site URL, e.g. `https://drawly.vercel.app` |
-| `CLIENT_ORIGIN` | Socket server | **Exact** browser origin(s), comma-separated: `https://drawly.vercel.app` |
-| `PORT` | Socket host | Usually injected by the host (Railway/Render) |
-
-After changing `NEXT_PUBLIC_*`, **redeploy** the Next app so the client bundle picks them up.
-
-Optional: **Upstash Redis** — set `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` on the socket process for room snapshots (see `server/redis-store.ts`).
-
----
-
-## Scripts
-
-| Command | What it does |
-|---------|----------------|
-| `npm run dev` | Next `:3000` + socket `:4000` |
-| `npm run dev:reset` | Kills common dev ports |
-| `npm run dev:next` / `npm run dev:socket` | Run one half only |
-| `npm run build` | Production Next build |
-| `npm run start` | Production Next (after `build`) |
-| `npm run start:socket` | Production socket server |
-| `npm run lint` | ESLint |
-| `npm run test:e2e` | Playwright smoke (install browsers: `npx playwright install chromium`) |
+Shared types for the client and server live in **`src/lib/game-types.ts`** (the server TypeScript config pulls that file in).
 
 ---
 
 ## Stack
 
-- **Next.js 14** (App Router) · **React 18** · **Tailwind CSS** · **Framer Motion**
-- **Zustand** · **Socket.io** · **perfect-freehand** canvas · **Lucide** icons
-- **TypeScript** — app in `src/`; socket in `server/` (see `server/tsconfig.json`)
-
----
-
-## Fonts & licenses
-
-- **0xProto Nerd Font Propo** (bundled under `src/fonts/0xproto/`) — see **`src/fonts/0xproto/LICENSE`** (SIL Open Font License).  
-- Nerd Fonts: [github.com/ryanoasis/nerd-fonts](https://github.com/ryanoasis/nerd-fonts)
-
----
-
-## Project layout
-
-```
-drawly/
-├── server/           # Express + Socket.io + game engine
-├── src/app/          # Routes & layout
-├── src/components/   # UI, room views, DrawingCanvas
-├── e2e/              # Playwright tests
-├── env.lan.example   # Template for same-Wi‑Fi play
-└── .env.example      # Default local dev env
-```
+Next.js (App Router), React, Tailwind CSS, Framer Motion, Zustand, Socket.io, **perfect-freehand** for drawing, Lucide icons.
 
 ---
 
 ## Contributing
 
-Issues and PRs welcome. Run **`npm run lint`**, **`npx tsc --noEmit`**, and **`npx tsc -p server/tsconfig.json`** before pushing.
-
----
-
-<p align="center">
-  Built for laughs. Ship it, share a room code, and ruin a friendship over a drawing of a toaster. 🎨
-</p>
+Issues and pull requests are welcome.
