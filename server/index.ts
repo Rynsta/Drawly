@@ -47,6 +47,7 @@ const io = new Server(httpServer, {
     methods: ["GET", "POST"],
     credentials: true,
   },
+  maxHttpBufferSize: 5e6,
 });
 
 const rooms = new RoomManager();
@@ -195,8 +196,11 @@ io.on("connection", (socket: Sock) => {
   });
 
   socket.on(
-    "game:prompt",
-    (payload: { text: string }, ack?: (r: unknown) => void) => {
+    "game:submit",
+    (
+      payload: { text?: string; imageDataUrl?: string },
+      ack?: (r: unknown) => void,
+    ) => {
       const code = socket.data.roomCode as string | undefined;
       const playerId = socket.data.playerId as string | undefined;
       if (!code || !playerId) {
@@ -208,45 +212,12 @@ io.on("connection", (socket: Sock) => {
         ack?.({ ok: false });
         return;
       }
-      const ok = rooms.submitPrompt(room, playerId, payload?.text || "", io, false);
-      ack?.({ ok });
-    },
-  );
-
-  socket.on(
-    "game:draw",
-    (payload: { imageDataUrl: string }, ack?: (r: unknown) => void) => {
-      const code = socket.data.roomCode as string | undefined;
-      const playerId = socket.data.playerId as string | undefined;
-      if (!code || !playerId) {
-        ack?.({ ok: false });
-        return;
-      }
-      const room = rooms.getRoom(code);
-      if (!room) {
-        ack?.({ ok: false });
-        return;
-      }
-      const ok = rooms.submitDraw(room, playerId, payload?.imageDataUrl || "", io, false);
-      ack?.({ ok });
-    },
-  );
-
-  socket.on(
-    "game:describe",
-    (payload: { text: string }, ack?: (r: unknown) => void) => {
-      const code = socket.data.roomCode as string | undefined;
-      const playerId = socket.data.playerId as string | undefined;
-      if (!code || !playerId) {
-        ack?.({ ok: false });
-        return;
-      }
-      const room = rooms.getRoom(code);
-      if (!room) {
-        ack?.({ ok: false });
-        return;
-      }
-      const ok = rooms.submitDescribe(room, playerId, payload?.text || "", io, false);
+      const ok = rooms.submitForRound(
+        room,
+        playerId,
+        { text: payload?.text, imageDataUrl: payload?.imageDataUrl },
+        io,
+      );
       ack?.({ ok });
     },
   );

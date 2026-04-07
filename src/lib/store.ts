@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { PublicRoomState } from "./game-types";
+import type { Assignment, PublicRoomState } from "./game-types";
 import type { LocalPlayer } from "./player-storage";
 import { getSocket } from "./socket-client";
 
@@ -9,6 +9,8 @@ interface DrawlyStore {
   socketConnected: boolean;
   lastError: string | null;
   listenersAttached: boolean;
+  assignment: Assignment | null;
+  submitted: boolean;
 
   setPlayer: (p: Partial<LocalPlayer>) => void;
   setRoom: (r: PublicRoomState | null) => void;
@@ -23,9 +25,7 @@ interface DrawlyStore {
   updateProfile: (patch: Partial<Pick<LocalPlayer, "name" | "emoji" | "color">>) => void;
   updateSettings: (patch: Partial<PublicRoomState["settings"]>) => void;
   startGame: () => Promise<boolean>;
-  submitPrompt: (text: string) => Promise<boolean>;
-  submitDraw: (imageDataUrl: string) => Promise<boolean>;
-  submitDescribe: (text: string) => Promise<boolean>;
+  submit: (content: { text?: string; imageDataUrl?: string }) => Promise<boolean>;
 }
 
 export const useDrawlyStore = create<DrawlyStore>((set, get) => ({
@@ -39,6 +39,8 @@ export const useDrawlyStore = create<DrawlyStore>((set, get) => ({
   socketConnected: false,
   lastError: null,
   listenersAttached: false,
+  assignment: null,
+  submitted: false,
 
   setPlayer: (p) =>
     set((s) => ({
@@ -68,8 +70,20 @@ export const useDrawlyStore = create<DrawlyStore>((set, get) => ({
         lastError: err?.message || "Could not reach game server",
       });
     });
+
     socket.on("room:state", (state: PublicRoomState) => {
+      const prev = get().room;
+      const roundChanged =
+        prev && prev.phase === "playing" && state.phase === "playing" && prev.currentRound !== state.currentRound;
+      const phaseChanged = prev && prev.phase !== state.phase;
+      if (roundChanged || phaseChanged) {
+        set({ submitted: false });
+      }
       set({ room: state });
+    });
+
+    socket.on("game:assignment", (a: Assignment) => {
+      set({ assignment: a, submitted: false });
     });
 
     if (socket.connected) markConnected();
@@ -128,7 +142,7 @@ export const useDrawlyStore = create<DrawlyStore>((set, get) => ({
   leaveRoom: () => {
     const socket = getSocket();
     socket.emit("room:leave");
-    set({ room: null });
+    set({ room: null, assignment: null, submitted: false });
   },
 
   setReady: (ready) =>
@@ -160,27 +174,16 @@ export const useDrawlyStore = create<DrawlyStore>((set, get) => ({
       });
     }),
 
-  submitPrompt: (text) =>
+  submit: (content) =>
     new Promise<boolean>((resolve) => {
       const socket = getSocket();
-      socket.emit("game:prompt", { text }, (ack: { ok?: boolean }) => {
-        resolve(Boolean(ack?.ok));
-      });
-    }),
-
-  submitDraw: (imageDataUrl) =>
-    new Promise<boolean>((resolve) => {
-      const socket = getSocket();
-      socket.emit("game:draw", { imageDataUrl }, (ack: { ok?: boolean }) => {
-        resolve(Boolean(ack?.ok));
-      });
-    }),
-
-  submitDescribe: (text) =>
-    new Promise<boolean>((resolve) => {
-      const socket = getSocket();
-      socket.emit("game:describe", { text }, (ack: { ok?: boolean }) => {
-        resolve(Boolean(ack?.ok));
-      });
+      socket.emit(
+        "game:submit",
+        content,
+        (ack: { ok?: boolean }) => {
+          if (ack?.ok) set({ submitted: true });
+          resolve(Boolean(ack?.ok));
+        },
+      );
     }),
 }));

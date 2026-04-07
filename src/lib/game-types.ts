@@ -12,7 +12,7 @@ export interface PublicPlayer {
 }
 
 export interface ChainEntry {
-  segmentIndex: number;
+  round: number;
   kind: SegmentKind;
   playerId: string;
   playerName: string;
@@ -20,10 +20,28 @@ export interface ChainEntry {
   imageDataUrl?: string;
 }
 
+export interface Book {
+  ownerId: string;
+  ownerName: string;
+  entries: ChainEntry[];
+}
+
+export interface BookSummary {
+  ownerId: string;
+  ownerName: string;
+  entryCount: number;
+}
+
+export interface Assignment {
+  bookIndex: number;
+  kind: SegmentKind;
+  previousEntry?: ChainEntry;
+}
+
 export interface RoomSettings {
-  rounds: number;
   drawSeconds: number;
   describeSeconds: number;
+  promptSeconds: number;
   describeMaxChars: number;
 }
 
@@ -33,26 +51,24 @@ export interface PublicRoomState {
   hostId: string;
   players: PublicPlayer[];
   settings: RoomSettings;
-  /** Current step in the chain (0 .. settings.rounds - 1) */
-  currentSegment: number;
+  currentRound: number;
+  totalRounds: number;
   turnEndsAt: number | null;
-  activePlayerId: string | null;
-  /** Completed steps only; current turn content is not included until submitted */
-  chain: ChainEntry[];
+  pendingPlayerIds: string[];
+  books: Book[];
+  bookSummaries: BookSummary[];
 }
 
-export function segmentKind(segmentIndex: number): SegmentKind {
-  if (segmentIndex === 0) return "prompt";
-  return segmentIndex % 2 === 1 ? "draw" : "describe";
+export function roundKind(round: number): SegmentKind {
+  if (round === 0) return "prompt";
+  return round % 2 === 1 ? "draw" : "describe";
 }
 
 export const DEFAULT_SETTINGS: RoomSettings = {
-  rounds: 8,
   drawSeconds: 75,
   describeSeconds: 60,
+  promptSeconds: 60,
   describeMaxChars: 280,
 };
 
-/** Min 1 so you can test solo; same player takes every turn in the chain. */
 export const PLAYER_LIMITS = { min: 1, max: 8 } as const;
-export const ROUND_LIMITS = { min: 6, max: 10 } as const;

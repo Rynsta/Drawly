@@ -8,7 +8,7 @@ import { GlassCard } from "@/components/ui/GlassCard";
 import { Button } from "@/components/ui/Button";
 import { useDrawlyStore } from "@/lib/store";
 import { getSocketUrl } from "@/lib/socket-client";
-import { PLAYER_LIMITS, ROUND_LIMITS } from "@/lib/game-types";
+import { PLAYER_LIMITS } from "@/lib/game-types";
 import { sfxError, sfxSuccess } from "@/lib/sfx";
 import { hapticSuccess } from "@/lib/haptics";
 
@@ -153,8 +153,7 @@ export default function HomePage() {
           <GlassCard id="join">
             <h2 className="text-lg font-semibold text-white">Jump in</h2>
             <p className="mt-1 text-sm text-zinc-500">
-              {PLAYER_LIMITS.min}–{PLAYER_LIMITS.max} players · {ROUND_LIMITS.min}–
-              {ROUND_LIMITS.max} chain steps
+              {PLAYER_LIMITS.min}–{PLAYER_LIMITS.max} players · rounds = player count
             </p>
             <label className="mt-4 block text-xs text-zinc-500">
               Your name

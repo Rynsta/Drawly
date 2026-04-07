@@ -3,6 +3,7 @@
 import getStroke from "perfect-freehand";
 import {
   type CSSProperties,
+  type MutableRefObject,
   useCallback,
   useEffect,
   useMemo,
@@ -445,10 +446,12 @@ export function DrawingCanvas({
   className,
   disabled,
   onExport,
+  exportRef,
 }: {
   className?: string;
   disabled?: boolean;
   onExport: (dataUrl: string) => void;
+  exportRef?: MutableRefObject<(() => string | null) | null>;
 }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -796,12 +799,23 @@ export function DrawingCanvas({
     return () => window.removeEventListener("keydown", onKey);
   }, [disabled, undo, redo]);
 
-  const exportPng = useCallback(() => {
+  const getDataUrl = useCallback((): string | null => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
-    const dataUrl = canvas.toDataURL("image/png", 0.88);
-    onExport(dataUrl);
-  }, [onExport]);
+    if (!canvas) return null;
+    return canvas.toDataURL("image/png", 0.85);
+  }, []);
+
+  const exportPng = useCallback(() => {
+    const dataUrl = getDataUrl();
+    if (dataUrl) onExport(dataUrl);
+  }, [getDataUrl, onExport]);
+
+  useEffect(() => {
+    if (exportRef) exportRef.current = getDataUrl;
+    return () => {
+      if (exportRef) exportRef.current = null;
+    };
+  }, [exportRef, getDataUrl]);
 
   const bumpBrush = (dir: -1 | 1) => {
     setBrushSize((s) => clampBrushSize(s + dir * BRUSH_SIZE_STEP));

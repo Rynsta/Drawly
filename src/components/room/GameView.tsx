@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Button } from "@/components/ui/Button";
@@ -9,44 +9,68 @@ import { ImagePreview } from "@/components/room/ImagePreview";
 import { TurnTimer } from "@/components/room/TurnTimer";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useDrawlyStore } from "@/lib/store";
-import { segmentKind } from "@/lib/game-types";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { sfxError, sfxSuccess } from "@/lib/sfx";
 import { hapticSuccess } from "@/lib/haptics";
 
+const AUTO_SUBMIT_BUFFER_MS = 2500;
+
 export function GameView() {
   const room = useDrawlyStore((s) => s.room);
-  const player = useDrawlyStore((s) => s.player);
-  const submitPrompt = useDrawlyStore((s) => s.submitPrompt);
-  const submitDraw = useDrawlyStore((s) => s.submitDraw);
-  const submitDescribe = useDrawlyStore((s) => s.submitDescribe);
+  const assignment = useDrawlyStore((s) => s.assignment);
+  const submitted = useDrawlyStore((s) => s.submitted);
+  const submit = useDrawlyStore((s) => s.submit);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const isNarrow = useMediaQuery("(max-width: 767px)");
+  const canvasExportRef = useRef<(() => string | null) | null>(null);
+  const autoSubmitFired = useRef(false);
 
-  const kind = room ? segmentKind(room.currentSegment) : "prompt";
-  const active = room?.activePlayerId === player.id;
-  const last = room?.chain[room.chain.length - 1];
+  const kind = assignment?.kind ?? "prompt";
+  const prevEntry = assignment?.previousEntry;
 
-  const promptForDraw = useMemo(() => {
-    if (!room || kind !== "draw") return "";
-    if (last?.kind === "prompt" || last?.kind === "describe") return last.text ?? "";
-    return "";
-  }, [room, kind, last]);
+  useEffect(() => {
+    setText("");
+    autoSubmitFired.current = false;
+  }, [room?.currentRound]);
 
-  const imageForDescribe = last?.kind === "draw" ? last.imageDataUrl : undefined;
+  useEffect(() => {
+    if (!room?.turnEndsAt || submitted || busy) return;
+    const check = () => {
+      if (autoSubmitFired.current || submitted) return;
+      const remaining = (room.turnEndsAt ?? 0) - Date.now();
+      if (remaining > AUTO_SUBMIT_BUFFER_MS) return;
 
-  if (!room) return null;
+      autoSubmitFired.current = true;
+
+      if (kind === "draw") {
+        const dataUrl = canvasExportRef.current?.();
+        if (dataUrl && dataUrl.length > 100) {
+          submit({ imageDataUrl: dataUrl });
+        }
+      } else {
+        const trimmed = text.trim();
+        if (trimmed.length >= 2) {
+          submit({ text: trimmed });
+        }
+      }
+    };
+
+    const id = setInterval(check, 500);
+    return () => clearInterval(id);
+  }, [room?.turnEndsAt, submitted, busy, kind, text, submit]);
+
+  if (!room || !assignment) return null;
 
   const maxChars = room.settings.describeMaxChars;
+  const pendingNames = room.players
+    .filter((p) => room.pendingPlayerIds.includes(p.id))
+    .map((p) => p.name);
 
   const onSubmitText = async () => {
     if (!text.trim() || busy) return;
     setBusy(true);
-    const ok =
-      kind === "prompt"
-        ? await submitPrompt(text.trim())
-        : await submitDescribe(text.trim());
+    const ok = await submit({ text: text.trim() });
     setBusy(false);
     if (ok) {
       setText("");
@@ -58,7 +82,7 @@ export function GameView() {
   const onSubmitDraw = async (dataUrl: string) => {
     if (busy) return;
     setBusy(true);
-    const ok = await submitDraw(dataUrl);
+    const ok = await submit({ imageDataUrl: dataUrl });
     setBusy(false);
     if (ok) {
       sfxSuccess();
@@ -66,15 +90,32 @@ export function GameView() {
     } else sfxError();
   };
 
+  if (submitted) {
+    return (
+      <div className="mx-auto max-w-4xl px-4 py-8">
+        <GlassCard className="py-12 text-center">
+          <p className="text-lg font-medium text-zinc-200">
+            Waiting for others…
+          </p>
+          {pendingNames.length > 0 && (
+            <p className="mt-2 text-sm text-zinc-500">
+              Still working: {pendingNames.join(", ")}
+            </p>
+          )}
+        </GlassCard>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-xs uppercase tracking-[0.2em] text-fuchsia-300/80">
-            Round {room.currentSegment + 1} / {room.settings.rounds}
+            Round {room.currentRound + 1} / {room.totalRounds}
           </p>
           <h2 className="text-2xl font-bold tracking-tight text-white">
-            {kind === "prompt" && "Write the starting prompt"}
+            {kind === "prompt" && "Write a starting prompt"}
             {kind === "draw" && "Draw what you read"}
             {kind === "describe" && "Describe the drawing"}
           </h2>
@@ -82,16 +123,7 @@ export function GameView() {
         <TurnTimer endsAt={room.turnEndsAt} />
       </div>
 
-      {!active && (
-        <GlassCard className="text-center">
-          <p className="text-lg text-zinc-200">You’re spectating this turn</p>
-          <p className="mt-2 text-sm text-zinc-500">
-            Wait for your turn — the chain is building.
-          </p>
-        </GlassCard>
-      )}
-
-      {active && kind === "prompt" && (
+      {kind === "prompt" && (
         <GlassCard>
           <label className="block text-sm text-zinc-400">
             Start the story — keep it short and weird.
@@ -106,37 +138,54 @@ export function GameView() {
           <p className="mt-1 text-right text-xs text-zinc-500">
             {text.length}/{maxChars}
           </p>
-          <Button className="mt-4" disabled={busy || text.trim().length < 2} onClick={onSubmitText}>
+          <Button
+            className="mt-4"
+            disabled={busy || text.trim().length < 2}
+            onClick={onSubmitText}
+          >
             Lock in prompt
           </Button>
         </GlassCard>
       )}
 
-      {active && kind === "draw" && (
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+      {kind === "draw" && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
           {isNarrow && (
             <GlassCard className="mb-4 border-amber-500/20 bg-amber-500/5">
               <p className="text-sm text-amber-100/90">
-                Drawing works best on a tablet or desktop. You can still try with
-                touch, or ask a friend to take this turn.
+                Drawing works best on a tablet or desktop. You can still try
+                with touch.
               </p>
             </GlassCard>
           )}
           <GlassCard>
             <p className="mb-3 rounded-xl border border-violet-500/20 bg-violet-500/10 px-4 py-3 text-sm text-violet-100">
               <span className="font-semibold text-white">Prompt: </span>
-              {promptForDraw || "—"}
+              {prevEntry?.text ?? "—"}
             </p>
             <ErrorBoundary>
-              <DrawingCanvas disabled={busy} onExport={onSubmitDraw} />
+              <DrawingCanvas
+                disabled={busy}
+                onExport={onSubmitDraw}
+                exportRef={canvasExportRef}
+              />
             </ErrorBoundary>
           </GlassCard>
         </motion.div>
       )}
 
-      {active && kind === "describe" && imageForDescribe && (
+      {kind === "describe" && (
         <GlassCard>
-          <ImagePreview src={imageForDescribe} alt="Previous drawing" className="mb-4" />
+          {prevEntry?.imageDataUrl && (
+            <ImagePreview
+              src={prevEntry.imageDataUrl}
+              alt="Previous drawing"
+              className="mb-4"
+            />
+          )}
           <label className="block text-sm text-zinc-400">
             Describe what you see — no cheating with the original prompt.
             <textarea
@@ -149,10 +198,20 @@ export function GameView() {
           <p className="mt-1 text-right text-xs text-zinc-500">
             {text.length}/{maxChars}
           </p>
-          <Button className="mt-4" disabled={busy || text.trim().length < 2} onClick={onSubmitText}>
+          <Button
+            className="mt-4"
+            disabled={busy || text.trim().length < 2}
+            onClick={onSubmitText}
+          >
             Submit description
           </Button>
         </GlassCard>
+      )}
+
+      {pendingNames.length > 0 && (
+        <p className="mt-4 text-center text-xs text-zinc-500">
+          Still working: {pendingNames.join(", ")}
+        </p>
       )}
     </div>
   );

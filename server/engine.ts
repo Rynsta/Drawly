@@ -1,17 +1,18 @@
 import type { Server } from "socket.io";
 import {
+  type Assignment,
+  type Book,
+  type BookSummary,
   type ChainEntry,
   type GamePhase,
   type PublicRoomState,
   type RoomSettings,
   DEFAULT_SETTINGS,
   PLAYER_LIMITS,
-  ROUND_LIMITS,
-  segmentKind,
+  roundKind,
 } from "../src/lib/game-types";
 import { deleteRoomPersisted, loadRoom, persistRoom } from "./redis-store";
 
-/** 1×1 transparent PNG for skipped / timed-out drawings */
 const EMPTY_DRAW_DATA_URL =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
 
@@ -37,17 +38,15 @@ export interface SerializedRoom {
   players: InternalPlayer[];
   settings: RoomSettings;
   phase: GamePhase;
-  currentSegment: number;
-  chain: ChainEntry[];
+  currentRound: number;
+  totalRounds: number;
+  books: Book[];
+  pendingPlayers: string[];
   turnEndsAt: number | null;
   turnTimer: ReturnType<typeof setTimeout> | null;
 }
 
 function sanitizeSettings(s: Partial<RoomSettings>): RoomSettings {
-  const rounds = Math.min(
-    ROUND_LIMITS.max,
-    Math.max(ROUND_LIMITS.min, Math.round(Number(s.rounds) || DEFAULT_SETTINGS.rounds)),
-  );
   const drawSeconds = Math.min(
     120,
     Math.max(45, Math.round(Number(s.drawSeconds) || DEFAULT_SETTINGS.drawSeconds)),
@@ -56,11 +55,15 @@ function sanitizeSettings(s: Partial<RoomSettings>): RoomSettings {
     120,
     Math.max(30, Math.round(Number(s.describeSeconds) || DEFAULT_SETTINGS.describeSeconds)),
   );
+  const promptSeconds = Math.min(
+    120,
+    Math.max(30, Math.round(Number(s.promptSeconds) || DEFAULT_SETTINGS.promptSeconds)),
+  );
   const describeMaxChars = Math.min(
     500,
     Math.max(40, Math.round(Number(s.describeMaxChars) || DEFAULT_SETTINGS.describeMaxChars)),
   );
-  return { rounds, drawSeconds, describeSeconds, describeMaxChars };
+  return { drawSeconds, describeSeconds, promptSeconds, describeMaxChars };
 }
 
 function randomCode(): string {
@@ -70,12 +73,16 @@ function randomCode(): string {
   return out;
 }
 
+/**
+ * For round `r`, player at index `pIdx` works on book `(pIdx + r) % n`.
+ * Round 0: everyone works on their own book (prompt).
+ */
+function bookIndexForPlayer(playerIndex: number, round: number, n: number): number {
+  return (playerIndex + round) % n;
+}
+
 export class RoomManager {
   private rooms = new Map<string, SerializedRoom>();
-
-  constructor() {
-    // optional hydrate from env not implemented; rooms are created fresh
-  }
 
   private async save(room: SerializedRoom) {
     const { turnTimer: _t, ...rest } = room;
@@ -101,7 +108,26 @@ export class RoomManager {
     }
   }
 
-  private toPublic(room: SerializedRoom, viewerId?: string): PublicRoomState {
+  private playerIndex(room: SerializedRoom, playerId: string): number {
+    return room.players.findIndex((p) => p.id === playerId);
+  }
+
+  getAssignment(room: SerializedRoom, playerId: string): Assignment | null {
+    if (room.phase !== "playing") return null;
+    const pIdx = this.playerIndex(room, playerId);
+    if (pIdx < 0) return null;
+    const n = room.players.length;
+    const bIdx = bookIndexForPlayer(pIdx, room.currentRound, n);
+    const kind = roundKind(room.currentRound);
+    const book = room.books[bIdx];
+    const prevEntry =
+      book && book.entries.length > 0
+        ? book.entries[book.entries.length - 1]
+        : undefined;
+    return { bookIndex: bIdx, kind, previousEntry: prevEntry };
+  }
+
+  private toPublic(room: SerializedRoom): PublicRoomState {
     const players = room.players.map((p) => ({
       id: p.id,
       name: p.name,
@@ -110,13 +136,14 @@ export class RoomManager {
       ready: p.ready,
       isHost: p.id === room.hostId,
     }));
-    const n = room.players.length;
-    const activePlayerId =
-      room.phase === "playing" && n > 0
-        ? room.players[room.currentSegment % n]?.id ?? null
-        : null;
 
-    const chain = [...room.chain];
+    const bookSummaries: BookSummary[] = room.books.map((b) => ({
+      ownerId: b.ownerId,
+      ownerName: b.ownerName,
+      entryCount: b.entries.length,
+    }));
+
+    const books: Book[] = room.phase === "reveal" ? room.books : [];
 
     return {
       code: room.code,
@@ -124,26 +151,23 @@ export class RoomManager {
       hostId: room.hostId,
       players,
       settings: room.settings,
-      currentSegment: room.currentSegment,
+      currentRound: room.currentRound,
+      totalRounds: room.totalRounds,
       turnEndsAt: room.turnEndsAt,
-      activePlayerId,
-      chain,
+      pendingPlayerIds: [...room.pendingPlayers],
+      books,
+      bookSummaries,
     };
   }
 
-  /** Extra hint for drawer/describer: previous step payload */
-  getPreviousPayload(room: SerializedRoom): { text?: string; imageDataUrl?: string } {
-    const last = room.chain[room.chain.length - 1];
-    if (!last) return {};
-    if (last.kind === "prompt" || last.kind === "describe") return { text: last.text };
-    return { imageDataUrl: last.imageDataUrl };
+  publicState(room: SerializedRoom): PublicRoomState {
+    return this.toPublic(room);
   }
 
-  publicState(room: SerializedRoom, viewerId?: string): PublicRoomState {
-    return this.toPublic(room, viewerId);
-  }
-
-  createRoom(socketId: string, player: Omit<InternalPlayer, "socketId" | "ready">): SerializedRoom {
+  createRoom(
+    socketId: string,
+    player: Omit<InternalPlayer, "socketId" | "ready">,
+  ): SerializedRoom {
     let code = randomCode();
     while (this.rooms.has(code)) code = randomCode();
     const room: SerializedRoom = {
@@ -152,8 +176,10 @@ export class RoomManager {
       players: [{ ...player, socketId, ready: false }],
       settings: { ...DEFAULT_SETTINGS },
       phase: "lobby",
-      currentSegment: 0,
-      chain: [],
+      currentRound: 0,
+      totalRounds: 0,
+      books: [],
+      pendingPlayers: [],
       turnEndsAt: null,
       turnTimer: null,
     };
@@ -200,13 +226,16 @@ export class RoomManager {
       return null;
     }
     if (room.hostId && !room.players.some((p) => p.id === room.hostId)) {
-      room.hostId = room.players.find((p) => p.socketId)?.id ?? room.players[0].id;
+      room.hostId =
+        room.players.find((p) => p.socketId)?.id ?? room.players[0].id;
     }
     void this.save(room);
     return room;
   }
 
-  disconnectSocket(socketId: string): { code: string; room: SerializedRoom } | null {
+  disconnectSocket(
+    socketId: string,
+  ): { code: string; room: SerializedRoom } | null {
     for (const room of this.rooms.values()) {
       const p = room.players.find((x) => x.socketId === socketId);
       if (p) {
@@ -219,7 +248,11 @@ export class RoomManager {
     return null;
   }
 
-  setReady(code: string, playerId: string, ready: boolean): SerializedRoom | null {
+  setReady(
+    code: string,
+    playerId: string,
+    ready: boolean,
+  ): SerializedRoom | null {
     const room = this.rooms.get(code.toUpperCase());
     if (!room || room.phase !== "lobby") return null;
     const p = room.players.find((x) => x.id === playerId);
@@ -257,44 +290,77 @@ export class RoomManager {
     return room;
   }
 
+  /** Schedule the end-of-round timer. */
   private scheduleTurnEnd(room: SerializedRoom, io: Server) {
     this.clearTurnTimer(room);
-    const n = room.players.length;
-    if (n === 0) return;
-    const kind = segmentKind(room.currentSegment);
+    const kind = roundKind(room.currentRound);
     const sec =
-      kind === "describe" || kind === "prompt"
-        ? room.settings.describeSeconds
-        : room.settings.drawSeconds;
+      kind === "prompt"
+        ? room.settings.promptSeconds
+        : kind === "draw"
+          ? room.settings.drawSeconds
+          : room.settings.describeSeconds;
     const ends = Date.now() + sec * 1000;
     room.turnEndsAt = ends;
     room.turnTimer = setTimeout(() => {
-      this.advanceAfterTimeout(room.code, io);
+      this.handleTimerExpiry(room.code, io);
     }, sec * 1000);
   }
 
-  private advanceAfterTimeout(code: string, io: Server) {
+  /** Timer fires: auto-submit placeholder for all pending players. */
+  private handleTimerExpiry(code: string, io: Server) {
     const room = this.rooms.get(code.toUpperCase());
     if (!room || room.phase !== "playing") return;
-    const kind = segmentKind(room.currentSegment);
-    const placeholder =
-      kind === "prompt"
-        ? "(time ran out — skipped prompt)"
-        : kind === "describe"
-          ? "(time ran out)"
-          : "";
-    const pid = room.players[room.currentSegment % room.players.length]?.id;
-    if (!pid) return;
-    if (kind === "draw") {
-      this.submitDraw(room, pid, EMPTY_DRAW_DATA_URL, io, true);
-    } else if (kind === "describe") {
-      this.submitDescribe(room, pid, placeholder, io, true);
-    } else {
-      this.submitPrompt(room, pid, placeholder, io, true);
+
+    const kind = roundKind(room.currentRound);
+    const pending = [...room.pendingPlayers];
+
+    for (const pid of pending) {
+      const pIdx = this.playerIndex(room, pid);
+      if (pIdx < 0) continue;
+      const n = room.players.length;
+      const bIdx = bookIndexForPlayer(pIdx, room.currentRound, n);
+      const player = room.players[pIdx];
+
+      const entry: ChainEntry = {
+        round: room.currentRound,
+        kind,
+        playerId: pid,
+        playerName: player.name,
+      };
+
+      if (kind === "draw") {
+        entry.imageDataUrl = EMPTY_DRAW_DATA_URL;
+      } else if (kind === "prompt") {
+        entry.text = "(time ran out)";
+      } else {
+        entry.text = "(time ran out)";
+      }
+
+      room.books[bIdx].entries.push(entry);
+    }
+
+    room.pendingPlayers = [];
+    this.advanceRound(room, io);
+  }
+
+  /**
+   * Emit `game:assignment` to each connected player.
+   */
+  emitAssignments(room: SerializedRoom, io: Server) {
+    for (const p of room.players) {
+      if (!p.socketId) continue;
+      const assignment = this.getAssignment(room, p.id);
+      if (!assignment) continue;
+      io.to(p.socketId).emit("game:assignment", assignment);
     }
   }
 
-  startGame(code: string, hostId: string, io: Server): SerializedRoom | null {
+  startGame(
+    code: string,
+    hostId: string,
+    io: Server,
+  ): SerializedRoom | null {
     const room = this.rooms.get(code.toUpperCase());
     if (!room || room.hostId !== hostId || room.phase !== "lobby") return null;
     const n = room.players.length;
@@ -304,113 +370,106 @@ export class RoomManager {
     shuffleInPlace(room.players);
 
     room.phase = "playing";
-    room.currentSegment = 0;
-    room.chain = [];
+    room.currentRound = 0;
+    room.totalRounds = n;
+    room.books = room.players.map((p) => ({
+      ownerId: p.id,
+      ownerName: p.name,
+      entries: [],
+    }));
+    room.pendingPlayers = room.players.map((p) => p.id);
     room.turnEndsAt = null;
     this.clearTurnTimer(room);
     this.scheduleTurnEnd(room, io);
+
     void this.save(room);
     io.to(room.code).emit("room:state", this.publicState(room));
+    this.emitAssignments(room, io);
     return room;
   }
 
-  submitPrompt(
+  /**
+   * Unified submit: player submits content for their current assignment.
+   */
+  submitForRound(
     room: SerializedRoom,
     playerId: string,
-    text: string,
+    content: { text?: string; imageDataUrl?: string },
     io: Server,
-    fromTimer = false,
   ): boolean {
-    if (room.phase !== "playing" || segmentKind(room.currentSegment) !== "prompt") return false;
+    if (room.phase !== "playing") return false;
+    if (!room.pendingPlayers.includes(playerId)) return false;
+
+    const pIdx = this.playerIndex(room, playerId);
+    if (pIdx < 0) return false;
+
     const n = room.players.length;
-    const active = room.players[room.currentSegment % n];
-    if (!active || active.id !== playerId) return false;
-    const trimmed = fromTimer ? text : text.trim();
-    if (!fromTimer && (trimmed.length < 2 || trimmed.length > room.settings.describeMaxChars))
-      return false;
+    const bIdx = bookIndexForPlayer(pIdx, room.currentRound, n);
+    const kind = roundKind(room.currentRound);
+    const player = room.players[pIdx];
+
+    if (kind === "draw") {
+      if (
+        !content.imageDataUrl ||
+        content.imageDataUrl.length < 100
+      )
+        return false;
+    } else {
+      const trimmed = (content.text ?? "").trim();
+      if (trimmed.length < 2 || trimmed.length > room.settings.describeMaxChars)
+        return false;
+    }
 
     const entry: ChainEntry = {
-      segmentIndex: room.currentSegment,
-      kind: "prompt",
-      playerId: active.id,
-      playerName: active.name,
-      text: trimmed,
+      round: room.currentRound,
+      kind,
+      playerId,
+      playerName: player.name,
     };
-    room.chain.push(entry);
-    this.finishSegment(room, io);
+
+    if (kind === "draw") {
+      entry.imageDataUrl = content.imageDataUrl;
+    } else {
+      entry.text = (content.text ?? "").trim();
+    }
+
+    room.books[bIdx].entries.push(entry);
+    room.pendingPlayers = room.pendingPlayers.filter((id) => id !== playerId);
+
+    if (room.pendingPlayers.length === 0) {
+      this.advanceRound(room, io);
+    } else {
+      void this.save(room);
+      io.to(room.code).emit("room:state", this.publicState(room));
+    }
+
     return true;
   }
 
-  submitDraw(
-    room: SerializedRoom,
-    playerId: string,
-    imageDataUrl: string,
-    io: Server,
-    fromTimer = false,
-  ): boolean {
-    if (room.phase !== "playing" || segmentKind(room.currentSegment) !== "draw") return false;
-    const n = room.players.length;
-    const active = room.players[room.currentSegment % n];
-    if (!active || active.id !== playerId) return false;
-    const url =
-      fromTimer ? EMPTY_DRAW_DATA_URL : imageDataUrl;
-    if (!fromTimer && (!imageDataUrl || imageDataUrl.length < 100)) return false;
-
-    const entry: ChainEntry = {
-      segmentIndex: room.currentSegment,
-      kind: "draw",
-      playerId: active.id,
-      playerName: active.name,
-      imageDataUrl: url,
-    };
-    room.chain.push(entry);
-    this.finishSegment(room, io);
-    return true;
-  }
-
-  submitDescribe(
-    room: SerializedRoom,
-    playerId: string,
-    text: string,
-    io: Server,
-    fromTimer = false,
-  ): boolean {
-    if (room.phase !== "playing" || segmentKind(room.currentSegment) !== "describe") return false;
-    const n = room.players.length;
-    const active = room.players[room.currentSegment % n];
-    if (!active || active.id !== playerId) return false;
-    const trimmed = fromTimer ? text : text.trim();
-    if (!fromTimer && (trimmed.length < 2 || trimmed.length > room.settings.describeMaxChars))
-      return false;
-
-    const entry: ChainEntry = {
-      segmentIndex: room.currentSegment,
-      kind: "describe",
-      playerId: active.id,
-      playerName: active.name,
-      text: trimmed,
-    };
-    room.chain.push(entry);
-    this.finishSegment(room, io);
-    return true;
-  }
-
-  private finishSegment(room: SerializedRoom, io: Server) {
+  private advanceRound(room: SerializedRoom, io: Server) {
     this.clearTurnTimer(room);
-    room.currentSegment += 1;
-    if (room.currentSegment >= room.settings.rounds) {
+    room.currentRound += 1;
+
+    if (room.currentRound >= room.totalRounds) {
       room.phase = "reveal";
       room.turnEndsAt = null;
+      room.pendingPlayers = [];
       io.to(room.code).emit("room:state", this.publicState(room));
       void this.save(room);
       return;
     }
+
+    room.pendingPlayers = room.players.map((p) => p.id);
     this.scheduleTurnEnd(room, io);
+
     void this.save(room);
     io.to(room.code).emit("room:state", this.publicState(room));
+    this.emitAssignments(room, io);
   }
 
-  lookupBySocket(socketId: string): { code: string; playerId: string } | null {
+  lookupBySocket(
+    socketId: string,
+  ): { code: string; playerId: string } | null {
     for (const room of this.rooms.values()) {
       const p = room.players.find((x) => x.socketId === socketId);
       if (p) return { code: room.code, playerId: p.id };
@@ -418,7 +477,11 @@ export class RoomManager {
     return null;
   }
 
-  bindSocketToPlayer(code: string, playerId: string, socketId: string): SerializedRoom | null {
+  bindSocketToPlayer(
+    code: string,
+    playerId: string,
+    socketId: string,
+  ): SerializedRoom | null {
     const room = this.rooms.get(code.toUpperCase());
     if (!room) return null;
     const p = room.players.find((x) => x.id === playerId);

@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Button } from "@/components/ui/Button";
 import { COLOR_PRESETS, EMOJI_PRESETS } from "@/lib/constants";
-import { PLAYER_LIMITS, ROUND_LIMITS } from "@/lib/game-types";
+import { PLAYER_LIMITS } from "@/lib/game-types";
 import { useDrawlyStore } from "@/lib/store";
 import { cn } from "@/lib/cn";
 import { sfxSuccess } from "@/lib/sfx";
@@ -157,25 +157,32 @@ export function LobbyView() {
         <GlassCard>
           <h2 className="text-lg font-semibold text-white">Room settings</h2>
           <p className="mt-1 text-xs text-zinc-500">
-            {PLAYER_LIMITS.min}–{PLAYER_LIMITS.max} players ·{" "}
-            {ROUND_LIMITS.min}–{ROUND_LIMITS.max} chain steps
+            {PLAYER_LIMITS.min}–{PLAYER_LIMITS.max} players
           </p>
+          <div className="mt-3 rounded-xl border border-violet-500/20 bg-violet-500/5 px-4 py-3">
+            <p className="text-sm text-violet-100">
+              Each player starts a book. Books rotate every round —{" "}
+              <span className="font-semibold text-white">
+                {room.players.length} player{room.players.length !== 1 ? "s" : ""} = {room.players.length} round{room.players.length !== 1 ? "s" : ""}
+              </span>
+            </p>
+          </div>
           <div className="mt-4 grid gap-4">
             <label className="block text-xs text-zinc-500">
-              Rounds (chain length)
+              Prompt time (seconds)
               <input
                 type="range"
-                min={ROUND_LIMITS.min}
-                max={ROUND_LIMITS.max}
+                min={30}
+                max={120}
                 disabled={!isHost}
-                value={room.settings.rounds}
+                value={room.settings.promptSeconds}
                 onChange={(e) =>
-                  updateSettings({ rounds: Number(e.target.value) })
+                  updateSettings({ promptSeconds: Number(e.target.value) })
                 }
                 className="mt-2 w-full accent-violet-500"
               />
               <span className="text-sm text-zinc-300">
-                {room.settings.rounds} steps
+                {room.settings.promptSeconds}s
               </span>
             </label>
             <label className="block text-xs text-zinc-500">
