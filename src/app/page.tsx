@@ -84,7 +84,7 @@ export default function HomePage() {
           <motion.p
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-sm font-semibold uppercase tracking-[0.25em] text-fuchsia-300/90"
+            className="text-sm font-semibold uppercase tracking-[0.25em] text-pink-300/90"
           >
             Party game
           </motion.p>
@@ -95,11 +95,7 @@ export default function HomePage() {
             transition={{ delay: 0.1 }}
             className="mt-5 text-lg leading-relaxed text-zinc-400 md:text-xl"
           >
-            A drawing-and-guessing chain for your crew —{" "}
-            <span className="text-transparent bg-gradient-to-r from-violet-300 to-cyan-300 bg-clip-text">
-              draw the prompt, describe the doodle
-            </span>
-            , then flip the reveal.
+            Draw something goofy, pass it on, and watch the chaos unfold.
           </motion.p>
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -118,7 +114,7 @@ export default function HomePage() {
             </a>
           </motion.div>
           {!socketConnected && !showSocketTrouble && (
-            <p className="mt-3 text-xs text-zinc-500">Connecting to game server…</p>
+            <p className="mt-3 text-xs text-zinc-500">Connecting…</p>
           )}
           {showSocketTrouble && (
             <div className="mt-3 max-w-xl space-y-2 text-sm text-amber-200/85">
@@ -151,15 +147,15 @@ export default function HomePage() {
 
         <div className="mt-14 grid gap-6 lg:grid-cols-2">
           <GlassCard id="join">
-            <h2 className="text-lg font-semibold text-white">Jump in</h2>
+            <h2 className="font-display text-lg font-semibold text-white">Let&apos;s go</h2>
             <p className="mt-1 text-sm text-zinc-500">
-              {PLAYER_LIMITS.min}–{PLAYER_LIMITS.max} players · rounds = player count
+              {PLAYER_LIMITS.min}–{PLAYER_LIMITS.max} friends · one round per player
             </p>
             <label className="mt-4 block text-xs text-zinc-500">
               Your name
               <input
                 className="mt-1 w-full rounded-xl border border-white/10 bg-night-deep/90 px-3 py-2.5 text-sm text-white outline-none ring-violet-500/30 focus:ring-2"
-                placeholder="How should we shout at you?"
+                placeholder="What do your friends call you?"
                 value={player.name}
                 onChange={(e) => setPlayer({ name: e.target.value })}
                 maxLength={24}
@@ -168,7 +164,7 @@ export default function HomePage() {
             <label className="mt-3 block text-xs text-zinc-500">
               Room code
               <input
-                className="mt-1 w-full rounded-xl border border-white/10 bg-night-deep/90 px-3 py-2.5 font-mono text-sm uppercase tracking-widest text-white outline-none ring-cyan-500/30 focus:ring-2"
+                className="mt-1 w-full rounded-xl border border-white/10 bg-night-deep/90 px-3 py-2.5 font-mono text-sm uppercase tracking-widest text-white outline-none ring-amber-500/30 focus:ring-2"
                 placeholder="ABCDEF"
                 value={joinCode}
                 maxLength={8}
@@ -186,23 +182,23 @@ export default function HomePage() {
           </GlassCard>
 
           <GlassCard>
-            <h2 className="text-lg font-semibold text-white">How it flows</h2>
+            <h2 className="font-display text-lg font-semibold text-white">How to play</h2>
             <ol className="mt-4 space-y-3 text-sm text-zinc-400">
               <li>
-                <span className="font-semibold text-violet-200">1.</span> Player one
-                writes a weird text prompt.
+                <span className="font-semibold text-violet-200">1.</span> Someone
+                writes a weird prompt.
               </li>
               <li>
-                <span className="font-semibold text-cyan-200">2.</span> Next player
-                draws it — no words, just vibes.
+                <span className="font-semibold text-pink-200">2.</span> Next person
+                draws it. No words, just vibes.
               </li>
               <li>
-                <span className="font-semibold text-fuchsia-200">3.</span> The next
-                person only sees the art and writes a fresh description.
+                <span className="font-semibold text-pink-200">3.</span> They only
+                see the drawing and write what they think it is.
               </li>
               <li>
-                <span className="font-semibold text-amber-200">4.</span> Repeat until
-                the chain completes, then flip the story and scream-laugh.
+                <span className="font-semibold text-amber-200">4.</span> Keep going
+                until everyone&apos;s had a turn, then watch it all go wrong.
               </li>
             </ol>
           </GlassCard>

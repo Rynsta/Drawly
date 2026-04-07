@@ -29,7 +29,7 @@ export class ErrorBoundary extends React.Component<
         <div className="bg-page flex min-h-[200px] items-center justify-center p-4">
           <GlassCard className="max-w-sm text-center">
             <p className="text-sm text-zinc-400">
-              {this.state.message || "This panel hit a snag."}
+              {this.state.message || "This bit got confused. Try resetting."}
             </p>
             <Button
               className="mt-4"

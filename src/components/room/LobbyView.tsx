@@ -45,10 +45,10 @@ export function LobbyView() {
     <div className="mx-auto flex max-w-5xl flex-col gap-8 px-4 py-10">
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-sm font-medium uppercase tracking-[0.2em] text-fuchsia-300/80">
+          <p className="text-sm font-medium uppercase tracking-[0.2em] text-pink-300/80">
             Lobby
           </p>
-          <h1 className="text-gradient-brand mt-1 text-4xl font-bold tracking-tight md:text-5xl">
+          <h1 className="text-gradient-brand mt-1 font-display text-4xl font-bold tracking-tight md:text-5xl">
             Drawly
           </h1>
           <p className="mt-2 max-w-lg text-sm text-zinc-400">
@@ -58,11 +58,11 @@ export function LobbyView() {
                 <button
                   type="button"
                   onClick={copyCode}
-                  className="font-mono text-cyan-300 underline decoration-dotted underline-offset-4 hover:text-cyan-200"
+                  className="font-mono text-amber-300 underline decoration-dotted underline-offset-4 hover:text-amber-200"
                 >
                   {room.code}
                 </button>
-                — share the code so friends can join.
+                — share this with your friends!
               </>
             ) : (
               <span className="text-amber-300/90">Connecting to server…</span>
@@ -84,7 +84,7 @@ export function LobbyView() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <GlassCard>
-          <h2 className="text-lg font-semibold text-white">Your profile</h2>
+          <h2 className="font-display text-lg font-semibold text-white">That&apos;s you</h2>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <label className="block text-xs text-zinc-500">
               Display name
@@ -155,13 +155,13 @@ export function LobbyView() {
         </GlassCard>
 
         <GlassCard>
-          <h2 className="text-lg font-semibold text-white">Room settings</h2>
+          <h2 className="font-display text-lg font-semibold text-white">Game setup</h2>
           <p className="mt-1 text-xs text-zinc-500">
             {PLAYER_LIMITS.min}–{PLAYER_LIMITS.max} players
           </p>
           <div className="mt-3 rounded-xl border border-violet-500/20 bg-violet-500/5 px-4 py-3">
             <p className="text-sm text-violet-100">
-              Each player starts a book. Books rotate every round —{" "}
+              Everyone starts a book that gets passed around —{" "}
               <span className="font-semibold text-white">
                 {room.players.length} player{room.players.length !== 1 ? "s" : ""} = {room.players.length} round{room.players.length !== 1 ? "s" : ""}
               </span>
@@ -196,7 +196,7 @@ export function LobbyView() {
                 onChange={(e) =>
                   updateSettings({ drawSeconds: Number(e.target.value) })
                 }
-                className="mt-2 w-full accent-cyan-500"
+                className="mt-2 w-full accent-amber-500"
               />
               <span className="text-sm text-zinc-300">
                 {room.settings.drawSeconds}s
@@ -213,7 +213,7 @@ export function LobbyView() {
                 onChange={(e) =>
                   updateSettings({ describeSeconds: Number(e.target.value) })
                 }
-                className="mt-2 w-full accent-fuchsia-500"
+                className="mt-2 w-full accent-pink-500"
               />
               <span className="text-sm text-zinc-300">
                 {room.settings.describeSeconds}s
@@ -240,8 +240,8 @@ export function LobbyView() {
       </div>
 
       <GlassCard>
-        <h2 className="text-lg font-semibold text-white">
-          Players ({room.players.length}/{PLAYER_LIMITS.max})
+        <h2 className="font-display text-lg font-semibold text-white">
+          Who&apos;s here ({room.players.length}/{PLAYER_LIMITS.max})
         </h2>
         <ul className="mt-4 grid gap-3 sm:grid-cols-2">
           {room.players.map((p, i) => (
@@ -272,7 +272,7 @@ export function LobbyView() {
               <span
                 className={cn(
                   "h-2.5 w-2.5 rounded-full",
-                  p.ready ? "bg-emerald-400 shadow-glow-cyan" : "bg-zinc-600",
+                  p.ready ? "bg-emerald-400 shadow-glow-gold" : "bg-zinc-600",
                 )}
               />
             </motion.li>

@@ -9,15 +9,19 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        night: "#0f0f1a",
-        "night-deep": "#08080f",
-        glass: "rgba(255,255,255,0.06)",
-        "glass-border": "rgba(255,255,255,0.12)",
+        night: "#111118",
+        "night-deep": "#0a0a12",
+        glass: "rgba(255,255,255,0.08)",
+        "glass-border": "rgba(255,255,255,0.14)",
       },
       fontFamily: {
         sans: [
-          "var(--font-proto-nerd)",
-          "ui-monospace",
+          "var(--font-body)",
+          "system-ui",
+          "sans-serif",
+        ],
+        display: [
+          "var(--font-display)",
           "system-ui",
           "sans-serif",
         ],
@@ -25,7 +29,7 @@ const config: Config = {
       boxShadow: {
         glow: "0 0 60px -12px rgba(167, 139, 250, 0.45)",
         "glow-pink": "0 0 50px -10px rgba(244, 114, 182, 0.4)",
-        "glow-cyan": "0 0 45px -10px rgba(34, 211, 238, 0.35)",
+        "glow-gold": "0 0 45px -10px rgba(251, 191, 36, 0.35)",
       },
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",

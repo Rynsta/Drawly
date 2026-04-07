@@ -95,11 +95,11 @@ export function GameView() {
       <div className="mx-auto max-w-4xl px-4 py-8">
         <GlassCard className="py-12 text-center">
           <p className="text-lg font-medium text-zinc-200">
-            Waiting for others…
+            You&apos;re done! Waiting on the slow ones…
           </p>
           {pendingNames.length > 0 && (
             <p className="mt-2 text-sm text-zinc-500">
-              Still working: {pendingNames.join(", ")}
+              Still going: {pendingNames.join(", ")}
             </p>
           )}
         </GlassCard>
@@ -111,13 +111,13 @@ export function GameView() {
     <div className="mx-auto max-w-4xl px-4 py-8">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-fuchsia-300/80">
+          <p className="text-xs uppercase tracking-[0.2em] text-pink-300/80">
             Round {room.currentRound + 1} / {room.totalRounds}
           </p>
-          <h2 className="text-2xl font-bold tracking-tight text-white">
-            {kind === "prompt" && "Write a starting prompt"}
-            {kind === "draw" && "Draw what you read"}
-            {kind === "describe" && "Describe the drawing"}
+          <h2 className="font-display text-2xl font-bold tracking-tight text-white">
+            {kind === "prompt" && "Write the first prompt"}
+            {kind === "draw" && "Draw it!"}
+            {kind === "describe" && "What is that?!"}
           </h2>
         </div>
         <TurnTimer endsAt={room.turnEndsAt} />
@@ -126,12 +126,12 @@ export function GameView() {
       {kind === "prompt" && (
         <GlassCard>
           <label className="block text-sm text-zinc-400">
-            Start the story — keep it short and weird.
+            Kick things off — keep it short and weird.
             <textarea
               className="mt-2 min-h-[140px] w-full resize-y rounded-xl border border-white/10 bg-night-deep/90 px-4 py-3 text-base text-white outline-none ring-violet-500/30 focus:ring-2"
               maxLength={maxChars}
               value={text}
-              placeholder="e.g. A nervous toaster at a talent show…"
+              placeholder="e.g. A cat trying to parallel park…"
               onChange={(e) => setText(e.target.value)}
             />
           </label>
@@ -143,7 +143,7 @@ export function GameView() {
             disabled={busy || text.trim().length < 2}
             onClick={onSubmitText}
           >
-            Lock in prompt
+            Lock it in
           </Button>
         </GlassCard>
       )}
@@ -156,8 +156,7 @@ export function GameView() {
           {isNarrow && (
             <GlassCard className="mb-4 border-amber-500/20 bg-amber-500/5">
               <p className="text-sm text-amber-100/90">
-                Drawing works best on a tablet or desktop. You can still try
-                with touch.
+                Heads up — drawing on a phone is tricky. Tablet or laptop works way better.
               </p>
             </GlassCard>
           )}
@@ -188,17 +187,17 @@ export function GameView() {
           ) : prevEntry?.timedOut ? (
             <div className="mb-4 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-6 text-center">
               <p className="text-sm text-amber-200/80">
-                The previous player ran out of time — no drawing was submitted.
+                The last person ran out of time. No drawing came through.
               </p>
               <p className="mt-1 text-xs text-zinc-500">
-                Describe whatever you think fits the story so far!
+                Just make something up that fits!
               </p>
             </div>
           ) : null}
           <label className="block text-sm text-zinc-400">
-            Describe what you see — no cheating with the original prompt.
+            What do you see? No peeking at the original!
             <textarea
-              className="mt-2 min-h-[120px] w-full resize-y rounded-xl border border-white/10 bg-night-deep/90 px-4 py-3 text-base text-white outline-none ring-cyan-500/30 focus:ring-2"
+              className="mt-2 min-h-[120px] w-full resize-y rounded-xl border border-white/10 bg-night-deep/90 px-4 py-3 text-base text-white outline-none ring-amber-500/30 focus:ring-2"
               maxLength={maxChars}
               value={text}
               onChange={(e) => setText(e.target.value)}
@@ -212,14 +211,14 @@ export function GameView() {
             disabled={busy || text.trim().length < 2}
             onClick={onSubmitText}
           >
-            Submit description
+            Send it
           </Button>
         </GlassCard>
       )}
 
       {pendingNames.length > 0 && (
         <p className="mt-4 text-center text-xs text-zinc-500">
-          Still working: {pendingNames.join(", ")}
+          Still going: {pendingNames.join(", ")}
         </p>
       )}
     </div>

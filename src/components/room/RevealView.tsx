@@ -17,7 +17,7 @@ function burst() {
     ...c,
     particleCount: 90,
     spread: 70,
-    colors: ["#a78bfa", "#22d3ee", "#f472b6"],
+    colors: ["#a78bfa", "#fbbf24", "#f472b6"],
   });
   setTimeout(() => {
     void confetti({
@@ -31,10 +31,10 @@ function burst() {
 }
 
 function stepLabel(entry: ChainEntry) {
-  if (entry.timedOut) return "Time ran out";
-  if (entry.kind === "prompt") return "Original prompt";
-  if (entry.kind === "draw") return "Drawing";
-  return "Description";
+  if (entry.timedOut) return "Ran out of time!";
+  if (entry.kind === "prompt") return "The starting prompt";
+  if (entry.kind === "draw") return "The drawing";
+  return "What they saw";
 }
 
 function BookPage({ entry }: { entry: ChainEntry }) {
@@ -341,8 +341,8 @@ export function RevealView() {
     try {
       if (navigator.share) {
         await navigator.share({
-          title: "Drawly game",
-          text: "Check out our Drawly books — flip through the stories!",
+          title: "Drawly",
+          text: "We just played Drawly and the results are unhinged",
           url,
         });
       } else {
@@ -366,18 +366,18 @@ export function RevealView() {
         <motion.h1
           initial={{ scale: 0.96, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="text-gradient-brand text-4xl font-bold tracking-tight md:text-5xl"
+          className="text-gradient-brand font-display text-4xl font-bold tracking-tight md:text-5xl"
         >
-          The Reveal
+          The Big Reveal
         </motion.h1>
         <p className="mt-2 text-sm text-zinc-400">
           {selectedBook
             ? isHost
-              ? "You're presenting — use the controls to flip pages."
-              : "The host is presenting — sit back and enjoy."
+              ? "You're the presenter! Flip through the pages."
+              : "Sit back, the host is driving."
             : isHost
-              ? "Pick a book to present to everyone."
-              : "Waiting for the host to pick a book…"}
+              ? "Pick a book to show everyone!"
+              : "Hang tight, the host is picking…"}
         </p>
       </header>
 
@@ -422,7 +422,7 @@ export function RevealView() {
       ) : (
         <GlassCard className="py-12 text-center">
           <p className="text-lg text-zinc-300">
-            Waiting for the host to select a book…
+            Hang tight, the host is picking…
           </p>
           <p className="mt-2 text-sm text-zinc-500">
             {books.length} book{books.length !== 1 ? "s" : ""} to explore

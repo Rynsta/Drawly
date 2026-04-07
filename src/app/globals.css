@@ -3,10 +3,10 @@
 @tailwind utilities;
 
 :root {
-  --background: #0f0f1a;
+  --background: #111118;
   --foreground: #f4f4f5;
   --accent: #a78bfa;
-  --accent-hot: #e879f9;
+  --accent-hot: #f472b6;
 }
 
 html {
@@ -35,14 +35,14 @@ body {
     @apply bg-clip-text text-transparent;
     background-image: linear-gradient(
       135deg,
-      #c4b5fd 0%,
-      #e879f9 40%,
-      #22d3ee 100%
+      #a78bfa 0%,
+      #f472b6 35%,
+      #fbbf24 100%
     );
   }
 
   .bg-page {
-    background-color: #0f0f1a;
+    background-color: #111118;
     background-image: radial-gradient(
         ellipse 140% 100% at 50% 0%,
         rgba(139, 92, 246, 0.38),
@@ -55,7 +55,7 @@ body {
       ),
       radial-gradient(
         ellipse 90% 60% at 0% 100%,
-        rgba(34, 211, 238, 0.16),
+        rgba(251, 191, 36, 0.16),
         transparent 42%
       );
     background-size: 200% 200%, 180% 180%, 160% 160%;
@@ -112,9 +112,9 @@ body {
   transform-origin: left center;
   background-image: linear-gradient(
     135deg,
-    #c4b5fd 0%,
-    #e879f9 40%,
-    #22d3ee 100%
+    #a78bfa 0%,
+    #f472b6 35%,
+    #fbbf24 100%
   );
   -webkit-background-clip: text;
   background-clip: text;

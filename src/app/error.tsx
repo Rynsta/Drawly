@@ -19,11 +19,11 @@ export default function Error({
   return (
     <div className="bg-page flex min-h-dvh items-center justify-center p-6">
       <GlassCard className="max-w-md text-center">
-        <h1 className="text-gradient-brand text-2xl font-bold tracking-tight">
-          Something broke
+        <h1 className="text-gradient-brand font-display text-2xl font-bold tracking-tight">
+          Whoops
         </h1>
         <p className="mt-3 text-sm text-zinc-400">
-          {error.message || "An unexpected error occurred."}
+          {error.message || "Something went sideways. Try again?"}
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <Button onClick={() => reset()}>Try again</Button>

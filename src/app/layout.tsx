@@ -1,28 +1,17 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
+import { Fredoka, Nunito_Sans } from "next/font/google";
 import "./globals.css";
 import { DrawlyProviders } from "@/components/providers/DrawlyProviders";
 
-/** 0xProto Nerd Font Propo — proportional build for UI (Nerd Fonts / SIL OFL). */
-const protoNerd = localFont({
-  src: [
-    {
-      path: "../fonts/0xproto/0xProtoNerdFontPropo-Regular.ttf",
-      weight: "400",
-      style: "normal",
-    },
-    {
-      path: "../fonts/0xproto/0xProtoNerdFontPropo-Italic.ttf",
-      weight: "400",
-      style: "italic",
-    },
-    {
-      path: "../fonts/0xproto/0xProtoNerdFontPropo-Bold.ttf",
-      weight: "700",
-      style: "normal",
-    },
-  ],
-  variable: "--font-proto-nerd",
+const fredoka = Fredoka({
+  subsets: ["latin"],
+  variable: "--font-display",
+  display: "swap",
+});
+
+const nunitoSans = Nunito_Sans({
+  subsets: ["latin"],
+  variable: "--font-body",
   display: "swap",
 });
 
@@ -40,13 +29,13 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={protoNerd.variable}
-      style={{ backgroundColor: "#0f0f1a" }}
+      className={`${fredoka.variable} ${nunitoSans.variable}`}
+      style={{ backgroundColor: "#111118" }}
     >
       <body
         className="min-h-dvh font-sans antialiased"
         style={{
-          backgroundColor: "#0f0f1a",
+          backgroundColor: "#111118",
           color: "#f4f4f5",
         }}
       >

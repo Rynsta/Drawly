@@ -15,7 +15,7 @@ export function DrawlyDrawnTitle({ className }: { className?: string }) {
   return (
     <h1
       className={cn(
-        "mt-3 flex flex-wrap items-baseline gap-[0.03em] text-5xl font-bold tracking-tight md:text-7xl",
+        "mt-3 flex flex-wrap items-baseline gap-[0.03em] font-display text-5xl font-extrabold tracking-tight md:text-7xl",
         className,
       )}
     >
