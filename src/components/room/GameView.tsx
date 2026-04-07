@@ -52,7 +52,7 @@ export function GameView() {
   const [busy, setBusy] = useState(false);
   const isNarrow = useMediaQuery("(max-width: 767px)");
   const canvasExportRef = useRef<(() => string | null) | null>(null);
-  const autoSubmitFired = useRef(false);
+  const autoSubmitInFlight = useRef(false);
 
   const kind = assignment?.kind ?? "prompt";
   const prevEntry = assignment?.previousEntry;
@@ -60,34 +60,54 @@ export function GameView() {
 
   useEffect(() => {
     setText("");
-    autoSubmitFired.current = false;
+    autoSubmitInFlight.current = false;
   }, [room?.currentRound]);
 
   useEffect(() => {
-    if (!room?.turnEndsAt || submitted || busy) return;
+    if (!room?.turnEndsAt || submitted) return;
+
     const check = () => {
-      if (autoSubmitFired.current || submitted) return;
+      if (submitted || autoSubmitInFlight.current) return;
       const remaining = (room.turnEndsAt ?? 0) - Date.now();
       if (remaining > AUTO_SUBMIT_BUFFER_MS) return;
 
-      autoSubmitFired.current = true;
-
       if (kind === "draw") {
         const dataUrl = canvasExportRef.current?.();
-        if (dataUrl && dataUrl.length > 100) {
-          submit({ imageDataUrl: dataUrl });
+        if (
+          !dataUrl ||
+          dataUrl.length < 50 ||
+          !dataUrl.startsWith("data:image/") ||
+          !dataUrl.includes("base64,")
+        ) {
+          return;
         }
-      } else {
-        const trimmed = text.trim();
-        if (trimmed.length >= 2) {
-          submit({ text: trimmed });
-        }
+        autoSubmitInFlight.current = true;
+        void (async () => {
+          try {
+            const ok = await submit({ imageDataUrl: dataUrl });
+            if (!ok) autoSubmitInFlight.current = false;
+          } catch {
+            autoSubmitInFlight.current = false;
+          }
+        })();
+        return;
       }
+
+      autoSubmitInFlight.current = true;
+      const toSend = text.trim();
+      void (async () => {
+        try {
+          const ok = await submit({ text: toSend });
+          if (!ok) autoSubmitInFlight.current = false;
+        } catch {
+          autoSubmitInFlight.current = false;
+        }
+      })();
     };
 
     const id = setInterval(check, 500);
     return () => clearInterval(id);
-  }, [room?.turnEndsAt, submitted, busy, kind, text, submit]);
+  }, [room?.turnEndsAt, submitted, kind, text, submit]);
 
   if (!room || !assignment) return null;
 
@@ -97,7 +117,7 @@ export function GameView() {
     .map((p) => p.name);
 
   const onSubmitText = async () => {
-    if (!text.trim() || busy) return;
+    if (!text.trim().length || busy) return;
     setBusy(true);
     const ok = await submit({ text: text.trim() });
     setBusy(false);
@@ -195,7 +215,7 @@ export function GameView() {
             </label>
             <div className="mt-2 flex items-center justify-between">
               <Button
-                disabled={busy || text.trim().length < 2}
+                disabled={busy || text.trim().length < 1}
                 onClick={onSubmitText}
               >
                 Lock it in
@@ -281,7 +301,7 @@ export function GameView() {
             </label>
             <div className="mt-2 flex items-center justify-between">
               <Button
-                disabled={busy || text.trim().length < 2}
+                disabled={busy || text.trim().length < 1}
                 onClick={onSubmitText}
               >
                 Send it

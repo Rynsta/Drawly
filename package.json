@@ -11,7 +11,9 @@
     "start": "next start",
     "start:socket": "tsx server/index.ts",
     "lint": "next lint",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:timeout-submit": "tsx server/scripts/verify-timeout-submit.ts",
+    "test:socket-dummies": "tsx server/scripts/socket-two-dummy-players.ts"
   },
   "dependencies": {
     "@upstash/redis": "^1.37.0",

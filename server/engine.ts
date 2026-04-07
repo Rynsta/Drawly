@@ -414,15 +414,16 @@ export class RoomManager {
     const player = room.players[pIdx];
 
     if (kind === "draw") {
+      const u = content.imageDataUrl ?? "";
       if (
-        !content.imageDataUrl ||
-        content.imageDataUrl.length < 100
+        u.length < 50 ||
+        !u.startsWith("data:image/") ||
+        !u.includes("base64,")
       )
         return false;
     } else {
       const trimmed = (content.text ?? "").trim();
-      if (trimmed.length < 2 || trimmed.length > room.settings.describeMaxChars)
-        return false;
+      if (trimmed.length > room.settings.describeMaxChars) return false;
     }
 
     const entry: ChainEntry = {
