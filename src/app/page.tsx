@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { DrawlyDrawnTitle } from "@/components/home/DrawlyDrawnTitle";
+import { FloatingParticles } from "@/components/home/FloatingParticles";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Button } from "@/components/ui/Button";
 import { useDrawlyStore } from "@/lib/store";
@@ -78,8 +79,9 @@ export default function HomePage() {
   };
 
   return (
-    <div className="bg-page min-h-dvh">
-      <div className="mx-auto max-w-6xl px-4 pb-20 pt-14 md:pt-20">
+    <div className="bg-page relative min-h-dvh">
+      <FloatingParticles />
+      <div className="relative z-10 mx-auto max-w-6xl px-4 pb-20 pt-14 md:pt-20">
         <header className="max-w-2xl">
           <motion.p
             initial={{ opacity: 0, y: 6 }}
@@ -97,22 +99,6 @@ export default function HomePage() {
           >
             Draw something goofy, pass it on, and watch the chaos unfold.
           </motion.p>
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }}
-            className="mt-8 flex flex-wrap gap-3"
-          >
-            <Button
-              disabled={busy !== null || !socketConnected}
-              onClick={onCreate}
-            >
-              {busy === "create" ? "Creating…" : "Create room"}
-            </Button>
-            <a href="#join">
-              <Button variant="secondary">Join room</Button>
-            </a>
-          </motion.div>
           {!socketConnected && !showSocketTrouble && (
             <p className="mt-3 text-xs text-zinc-500">Connecting…</p>
           )}
@@ -171,14 +157,22 @@ export default function HomePage() {
                 onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
               />
             </label>
-            <Button
-              className="mt-5 w-full sm:w-auto"
-              disabled={busy !== null || !socketConnected}
-              variant="primary"
-              onClick={onJoin}
-            >
-              {busy === "join" ? "Joining…" : "Join room"}
-            </Button>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Button
+                disabled={busy !== null || !socketConnected}
+                variant="primary"
+                onClick={onJoin}
+              >
+                {busy === "join" ? "Joining…" : "Join room"}
+              </Button>
+              <Button
+                disabled={busy !== null || !socketConnected}
+                variant="secondary"
+                onClick={onCreate}
+              >
+                {busy === "create" ? "Creating…" : "Create room"}
+              </Button>
+            </div>
           </GlassCard>
 
           <GlassCard>
