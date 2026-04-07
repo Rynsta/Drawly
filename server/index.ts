@@ -47,7 +47,7 @@ const io = new Server(httpServer, {
     methods: ["GET", "POST"],
     credentials: true,
   },
-  maxHttpBufferSize: 5e6,
+  maxHttpBufferSize: 15e6,
 });
 
 const rooms = new RoomManager();

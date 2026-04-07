@@ -17,6 +17,7 @@ const AUTO_SUBMIT_BUFFER_MS = 3500;
 
 export function GameView() {
   const room = useDrawlyStore((s) => s.room);
+  const player = useDrawlyStore((s) => s.player);
   const assignment = useDrawlyStore((s) => s.assignment);
   const submitted = useDrawlyStore((s) => s.submitted);
   const submit = useDrawlyStore((s) => s.submit);
@@ -64,7 +65,7 @@ export function GameView() {
 
   const maxChars = room.settings.describeMaxChars;
   const pendingNames = room.players
-    .filter((p) => room.pendingPlayerIds.includes(p.id))
+    .filter((p) => room.pendingPlayerIds.includes(p.id) && p.id !== player.id)
     .map((p) => p.name);
 
   const onSubmitText = async () => {
@@ -184,16 +185,18 @@ export function GameView() {
               alt="Previous drawing"
               className="mb-4"
             />
-          ) : prevEntry?.timedOut ? (
+          ) : (
             <div className="mb-4 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-6 text-center">
               <p className="text-sm text-amber-200/80">
-                The last person ran out of time. No drawing came through.
+                {prevEntry?.timedOut
+                  ? "The last person ran out of time. No drawing came through."
+                  : "No drawing to show — just wing it!"}
               </p>
               <p className="mt-1 text-xs text-zinc-500">
                 Just make something up that fits!
               </p>
             </div>
-          ) : null}
+          )}
           <label className="block text-sm text-zinc-400">
             What do you see? No peeking at the original!
             <textarea
