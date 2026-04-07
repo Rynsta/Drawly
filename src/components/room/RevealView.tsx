@@ -29,15 +29,35 @@ function burst() {
   }, 180);
 }
 
+const ENTRY_KIND_META = {
+  prompt: {
+    label: "The starting prompt",
+    badge: "bg-violet-500/20 text-violet-300 ring-violet-500/30",
+    border: "border-violet-500/20",
+    icon: "💬",
+  },
+  draw: {
+    label: "The drawing",
+    badge: "bg-pink-500/20 text-pink-300 ring-pink-500/30",
+    border: "border-pink-500/20",
+    icon: "🎨",
+  },
+  describe: {
+    label: "What they saw",
+    badge: "bg-amber-500/20 text-amber-300 ring-amber-500/30",
+    border: "border-amber-500/20",
+    icon: "🔍",
+  },
+};
+
 function stepLabel(entry: ChainEntry) {
   if (entry.timedOut) return "Ran out of time!";
-  if (entry.kind === "prompt") return "The starting prompt";
-  if (entry.kind === "draw") return "The drawing";
-  return "What they saw";
+  return ENTRY_KIND_META[entry.kind].label;
 }
 
 function EntryCard({ entry, index }: { entry: ChainEntry; index: number }) {
   const reduceMotion = useReducedMotion();
+  const meta = ENTRY_KIND_META[entry.kind];
 
   return (
     <motion.div
@@ -46,41 +66,46 @@ function EntryCard({ entry, index }: { entry: ChainEntry; index: number }) {
       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
       className="relative"
     >
-      {/* Connector line from previous entry */}
+      {/* Connector line */}
       {index > 0 && (
-        <div className="absolute -top-4 left-1/2 h-4 w-px bg-white/10" />
+        <div className="absolute -top-4 left-6 h-4 w-px bg-gradient-to-b from-transparent via-white/15 to-white/15" />
       )}
 
       <div
         className={cn(
-          "overflow-hidden rounded-2xl border shadow-lg",
+          "overflow-hidden rounded-2xl border",
           entry.timedOut
-            ? "border-amber-500/20 bg-amber-950/30"
-            : "border-white/10 bg-night-deep/80",
+            ? "border-amber-500/25 bg-amber-950/20"
+            : `${meta.border} bg-[#0c0c14]/70`,
         )}
+        style={{
+          boxShadow: entry.timedOut
+            ? "0 4px 24px -8px rgba(245,158,11,0.15)"
+            : "0 4px 24px -8px rgba(0,0,0,0.5)",
+        }}
       >
         {/* Header */}
-        <div className="flex items-center gap-3 border-b border-white/10 px-5 py-3">
+        <div className="flex items-center gap-3 border-b border-white/[0.06] bg-white/[0.03] px-5 py-3">
+          <span className="text-lg">{entry.timedOut ? "⏰" : meta.icon}</span>
           <span
             className={cn(
-              "inline-flex h-7 min-w-7 items-center justify-center rounded-full px-2 text-xs font-semibold",
-              entry.kind === "prompt" && "bg-violet-500/20 text-violet-300",
-              entry.kind === "draw" && "bg-pink-500/20 text-pink-300",
-              entry.kind === "describe" && "bg-amber-500/20 text-amber-300",
-              entry.timedOut && "bg-amber-500/20 text-amber-400/70",
+              "rounded-full px-2.5 py-0.5 text-xs font-bold ring-1",
+              entry.timedOut
+                ? "bg-amber-500/20 text-amber-400 ring-amber-500/30"
+                : meta.badge,
             )}
           >
             {stepLabel(entry)}
           </span>
-          <span className="text-sm font-medium text-zinc-300">
+          <span className="ml-auto text-sm font-medium text-zinc-400">
             {entry.playerName}
           </span>
         </div>
 
         {/* Content */}
-        <div className="px-5 py-4">
+        <div className="px-5 py-5">
           {entry.timedOut && !entry.imageDataUrl && (
-            <p className="text-center text-sm italic text-amber-200/60">
+            <p className="text-center text-sm italic text-amber-200/50">
               {entry.text ?? "(nothing submitted)"}
             </p>
           )}
@@ -183,12 +208,17 @@ function BookReveal({
       <div className="mb-6 flex items-center gap-3">
         {isHost && (
           <Button variant="ghost" onClick={onBack}>
-            &larr; All books
+            ← All books
           </Button>
         )}
         <h2 className="font-display text-lg font-semibold text-white">
           {book.ownerName}&rsquo;s book
         </h2>
+        {isHost && (
+          <span className="ml-auto text-xs text-zinc-500">
+            Space / → to reveal
+          </span>
+        )}
       </div>
 
       <div className="space-y-4">
@@ -199,10 +229,10 @@ function BookReveal({
               <div className="mt-2 flex justify-end">
                 <button
                   type="button"
-                  className="text-xs text-zinc-500 hover:text-zinc-300"
+                  className="text-xs text-zinc-500 transition-colors hover:text-zinc-300"
                   onClick={() => downloadDrawing(entry, i)}
                 >
-                  Download drawing
+                  ↓ Download drawing
                 </button>
               </div>
             )}
@@ -210,24 +240,47 @@ function BookReveal({
         ))}
       </div>
 
-      <div ref={bottomRef} className="mt-6 flex flex-col items-center gap-3">
+      <div ref={bottomRef} className="mt-8 flex flex-col items-center gap-4">
+        <div className="flex items-center gap-2">
+          {Array.from({ length: n }).map((_, i) => (
+            <span
+              key={i}
+              className={cn(
+                "h-1.5 rounded-full transition-all duration-300",
+                i < shown
+                  ? "w-4 bg-violet-400"
+                  : "w-1.5 bg-white/20",
+              )}
+            />
+          ))}
+        </div>
         <p className="text-sm tabular-nums text-zinc-400">
-          Showing{" "}
-          <span className="font-medium text-zinc-200">{shown}</span> of{" "}
-          <span className="font-medium text-zinc-200">{n}</span>
+          <span className="font-semibold text-zinc-200">{shown}</span> /{" "}
+          <span className="font-semibold text-zinc-200">{n}</span> revealed
         </p>
         {isHost && !allRevealed && (
-          <Button onClick={onRevealNext}>
-            Reveal next
-          </Button>
+          <Button onClick={onRevealNext}>Reveal next →</Button>
         )}
         {allRevealed && (
-          <p className="text-sm text-emerald-400/80">All entries revealed!</p>
+          <p className="flex items-center gap-2 text-sm font-semibold text-emerald-400">
+            <span>✓</span> All entries revealed!
+          </p>
         )}
       </div>
     </>
   );
 }
+
+const BOOK_COLORS = [
+  "from-violet-600/30 to-violet-900/10 border-violet-500/25",
+  "from-pink-600/30 to-pink-900/10 border-pink-500/25",
+  "from-amber-600/30 to-amber-900/10 border-amber-500/25",
+  "from-cyan-600/30 to-cyan-900/10 border-cyan-500/25",
+  "from-emerald-600/30 to-emerald-900/10 border-emerald-500/25",
+  "from-rose-600/30 to-rose-900/10 border-rose-500/25",
+  "from-indigo-600/30 to-indigo-900/10 border-indigo-500/25",
+  "from-orange-600/30 to-orange-900/10 border-orange-500/25",
+];
 
 export function RevealView() {
   const room = useDrawlyStore((s) => s.room);
@@ -284,15 +337,18 @@ export function RevealView() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
-      <header className="mb-8 text-center">
-        <motion.h1
-          initial={{ scale: 0.96, opacity: 0 }}
+      <header className="mb-10 text-center">
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="text-gradient-brand font-display text-4xl font-bold tracking-tight md:text-5xl"
+          transition={{ type: "spring", bounce: 0.4 }}
         >
-          The Big Reveal
-        </motion.h1>
-        <p className="mt-2 text-sm text-zinc-400">
+          <p className="text-5xl">🎊</p>
+          <h1 className="text-gradient-brand mt-3 font-display text-4xl font-bold tracking-tight md:text-5xl">
+            The Big Reveal
+          </h1>
+        </motion.div>
+        <p className="mt-3 text-sm text-zinc-400">
           {selectedBook
             ? isHost
               ? "You're the presenter! Tap to reveal each step."
@@ -318,41 +374,46 @@ export function RevealView() {
         </GlassCard>
       ) : isHost ? (
         <ul className="grid gap-4 sm:grid-cols-2">
-          {books.map((book, idx) => (
-            <motion.li
-              key={book.ownerId}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.06 }}
-            >
-              <button
-                type="button"
-                className="group w-full rounded-2xl border border-white/10 bg-night-deep/60 px-5 py-5 text-left transition-all hover:border-violet-400/40 hover:bg-violet-500/5 hover:shadow-lg hover:shadow-violet-900/20"
-                onClick={() => selectBook(idx)}
+          {books.map((book, idx) => {
+            const colorClass =
+              BOOK_COLORS[idx % BOOK_COLORS.length];
+            return (
+              <motion.li
+                key={book.ownerId}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.07 }}
               >
-                <p className="font-display text-lg font-semibold text-white group-hover:text-violet-200">
-                  {book.ownerName}&rsquo;s book
-                </p>
-                <p className="mt-1 text-sm text-zinc-500">
-                  {book.entries.length} page
-                  {book.entries.length !== 1 ? "s" : ""}
-                </p>
-              </button>
-            </motion.li>
-          ))}
+                <button
+                  type="button"
+                  className={`group w-full overflow-hidden rounded-2xl border bg-gradient-to-br px-5 py-5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg ${colorClass}`}
+                  onClick={() => selectBook(idx)}
+                >
+                  <p className="font-display text-lg font-bold text-white transition-colors group-hover:text-white">
+                    {book.ownerName}&rsquo;s book
+                  </p>
+                  <p className="mt-1 text-sm text-zinc-400">
+                    {book.entries.length} page
+                    {book.entries.length !== 1 ? "s" : ""} · tap to reveal
+                  </p>
+                </button>
+              </motion.li>
+            );
+          })}
         </ul>
       ) : (
         <GlassCard className="py-12 text-center">
-          <p className="text-lg text-zinc-300">
+          <p className="text-3xl">⏳</p>
+          <p className="mt-3 text-lg font-semibold text-zinc-200">
             Hang tight, the host is picking…
           </p>
-          <p className="mt-2 text-sm text-zinc-500">
+          <p className="mt-1 text-sm text-zinc-500">
             {books.length} book{books.length !== 1 ? "s" : ""} to explore
           </p>
         </GlassCard>
       )}
 
-      <div className="mt-10 flex flex-wrap justify-center gap-3">
+      <div className="mt-12 flex flex-wrap justify-center gap-3">
         <Button variant="secondary" onClick={share}>
           Share room link
         </Button>

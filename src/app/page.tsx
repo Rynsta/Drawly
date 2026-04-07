@@ -15,6 +15,37 @@ import { hapticSuccess } from "@/lib/haptics";
 
 const SOCKET_HELP_DELAY_MS = 1200;
 
+const STEPS = [
+  {
+    n: "1",
+    color: "text-violet-300",
+    ring: "ring-violet-500/40",
+    bg: "bg-violet-500/15",
+    text: "Someone writes a weird prompt.",
+  },
+  {
+    n: "2",
+    color: "text-fuchsia-300",
+    ring: "ring-fuchsia-500/40",
+    bg: "bg-fuchsia-500/15",
+    text: "Next person draws it. No words, just vibes.",
+  },
+  {
+    n: "3",
+    color: "text-pink-300",
+    ring: "ring-pink-500/40",
+    bg: "bg-pink-500/15",
+    text: "They only see the drawing and write what they think it is.",
+  },
+  {
+    n: "4",
+    color: "text-amber-300",
+    ring: "ring-amber-500/40",
+    bg: "bg-amber-500/15",
+    text: "Keep going until everyone's had a turn, then watch it all go wrong.",
+  },
+];
+
 export default function HomePage() {
   const router = useRouter();
   const createRoom = useDrawlyStore((s) => s.createRoom);
@@ -81,13 +112,14 @@ export default function HomePage() {
   return (
     <div className="bg-page relative min-h-dvh">
       <FloatingParticles />
-      <div className="relative z-10 mx-auto max-w-6xl px-4 pb-20 pt-14 md:pt-20">
+      <div className="relative z-10 mx-auto max-w-6xl px-4 pb-20 pt-14 md:pt-24">
         <header className="max-w-2xl">
           <motion.p
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-sm font-semibold uppercase tracking-[0.25em] text-pink-300/90"
+            className="inline-flex items-center gap-2 rounded-full bg-pink-500/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-pink-300 ring-1 ring-pink-500/25"
           >
+            <span className="h-1.5 w-1.5 rounded-full bg-pink-400" />
             Party game
           </motion.p>
           <DrawlyDrawnTitle />
@@ -95,22 +127,30 @@ export default function HomePage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="mt-5 text-lg leading-relaxed text-zinc-400 md:text-xl"
+            className="mt-4 max-w-lg text-lg leading-relaxed text-zinc-400 md:text-xl"
           >
             Draw something goofy, pass it on, and watch the chaos unfold.
           </motion.p>
           {!socketConnected && !showSocketTrouble && (
-            <p className="mt-3 text-xs text-zinc-500">Connecting…</p>
+            <p className="mt-3 flex items-center gap-1.5 text-xs text-zinc-500">
+              <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-zinc-500" />
+              Connecting…
+            </p>
           )}
           {showSocketTrouble && (
-            <div className="mt-3 max-w-xl space-y-2 text-sm text-amber-200/85">
+            <motion.div
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-4 max-w-xl space-y-2 rounded-xl border border-amber-500/20 bg-amber-500/8 px-4 py-3 text-sm text-amber-200/85"
+            >
               <p>
                 Waiting for the realtime server. In the project folder run{" "}
                 <code className="rounded bg-white/10 px-1.5 py-0.5 text-xs text-zinc-100">
                   npm run dev
                 </code>{" "}
-                so <strong>both</strong> Next.js (port 3000) and the socket (port 4000)
-                start — not <code className="text-xs">next dev</code> alone.
+                so <strong>both</strong> Next.js (port 3000) and the socket
+                (port 4000) start — not{" "}
+                <code className="text-xs">next dev</code> alone.
               </p>
               <p className="text-xs text-zinc-500">
                 Client connects to{" "}
@@ -127,75 +167,106 @@ export default function HomePage() {
                   {lastError}
                 </p>
               ) : null}
-            </div>
+            </motion.div>
           )}
         </header>
 
         <div className="mt-14 grid gap-6 lg:grid-cols-2">
-          <GlassCard id="join">
-            <h2 className="font-display text-lg font-semibold text-white">Let&apos;s go</h2>
-            <p className="mt-1 text-sm text-zinc-500">
-              {PLAYER_LIMITS.min}–{PLAYER_LIMITS.max} friends · one round per player
-            </p>
-            <label className="mt-4 block text-xs text-zinc-500">
-              Your name
-              <input
-                className="mt-1 w-full rounded-xl border border-white/10 bg-night-deep/90 px-3 py-2.5 text-sm text-white outline-none ring-violet-500/30 focus:ring-2"
-                placeholder="What do your friends call you?"
-                value={player.name}
-                onChange={(e) => setPlayer({ name: e.target.value })}
-                maxLength={24}
-              />
-            </label>
-            <label className="mt-3 block text-xs text-zinc-500">
-              Room code
-              <input
-                className="mt-1 w-full rounded-xl border border-white/10 bg-night-deep/90 px-3 py-2.5 font-mono text-sm uppercase tracking-widest text-white outline-none ring-amber-500/30 focus:ring-2"
-                placeholder="ABCDEF"
-                value={joinCode}
-                maxLength={8}
-                onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-              />
-            </label>
-            <div className="mt-5 flex flex-wrap gap-3">
-              <Button
-                disabled={busy !== null || !socketConnected}
-                variant="primary"
-                onClick={onJoin}
-              >
-                {busy === "join" ? "Joining…" : "Join room"}
-              </Button>
-              <Button
-                disabled={busy !== null || !socketConnected}
-                variant="secondary"
-                onClick={onCreate}
-              >
-                {busy === "create" ? "Creating…" : "Create room"}
-              </Button>
-            </div>
-          </GlassCard>
+          {/* Join / Create card */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+          >
+            <GlassCard id="join">
+              <div className="mb-5 flex items-center gap-2">
+                <span className="text-2xl">🎮</span>
+                <div>
+                  <h2 className="font-display text-lg font-bold text-white">
+                    Let&apos;s go
+                  </h2>
+                  <p className="text-xs text-zinc-500">
+                    {PLAYER_LIMITS.min}–{PLAYER_LIMITS.max} friends · one round
+                    per player
+                  </p>
+                </div>
+              </div>
 
-          <GlassCard>
-            <h2 className="font-display text-lg font-semibold text-white">How to play</h2>
-            <ol className="mt-4 space-y-3 text-sm text-zinc-400">
-              <li>
-                <span className="font-semibold text-violet-200">1.</span> Someone
-                writes a weird prompt.
-              </li>
-              <li>
-                <span className="font-semibold text-pink-200">2.</span> Next person
-                draws it. No words, just vibes.
-              </li>
-              <li>
-                <span className="font-semibold text-pink-200">3.</span> They only
-                see the drawing and write what they think it is.
-              </li>
-              <li>
-                <span className="font-semibold text-amber-200">4.</span> Keep going
-                until everyone&apos;s had a turn, then watch it all go wrong.
-              </li>
-            </ol>
-          </GlassCard>
+              <div className="space-y-3">
+                <label className="block">
+                  <span className="mb-1 block text-xs font-medium text-zinc-400">
+                    Your name
+                  </span>
+                  <input
+                    className="w-full rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2.5 text-sm text-white outline-none transition-all placeholder:text-zinc-600 focus:border-violet-500/50 focus:bg-white/[0.07] focus:shadow-[0_0_0_3px_rgba(139,92,246,0.18)]"
+                    placeholder="What do your friends call you?"
+                    value={player.name}
+                    onChange={(e) => setPlayer({ name: e.target.value })}
+                    maxLength={24}
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-1 block text-xs font-medium text-zinc-400">
+                    Room code
+                  </span>
+                  <input
+                    className="w-full rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2.5 font-mono text-sm uppercase tracking-widest text-white outline-none transition-all placeholder:text-zinc-600 focus:border-amber-500/50 focus:bg-white/[0.07] focus:shadow-[0_0_0_3px_rgba(245,158,11,0.18)]"
+                    placeholder="ABCDEF"
+                    value={joinCode}
+                    maxLength={8}
+                    onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                  />
+                </label>
+              </div>
+
+              <div className="mt-5 flex flex-wrap gap-3">
+                <Button
+                  disabled={busy !== null || !socketConnected}
+                  variant="primary"
+                  onClick={onJoin}
+                >
+                  {busy === "join" ? "Joining…" : "Join room"}
+                </Button>
+                <Button
+                  disabled={busy !== null || !socketConnected}
+                  variant="secondary"
+                  onClick={onCreate}
+                >
+                  {busy === "create" ? "Creating…" : "Create room"}
+                </Button>
+              </div>
+            </GlassCard>
+          </motion.div>
+
+          {/* How to play card */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.22 }}
+          >
+            <GlassCard>
+              <div className="mb-5 flex items-center gap-2">
+                <span className="text-2xl">📖</span>
+                <h2 className="font-display text-lg font-bold text-white">
+                  How to play
+                </h2>
+              </div>
+              <ol className="space-y-3">
+                {STEPS.map((step) => (
+                  <li key={step.n} className="flex items-start gap-3">
+                    <span
+                      className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-xs font-bold ring-1 ${step.color} ${step.bg} ${step.ring}`}
+                    >
+                      {step.n}
+                    </span>
+                    <span className="text-sm leading-relaxed text-zinc-300">
+                      {step.text}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            </GlassCard>
+          </motion.div>
         </div>
       </div>
     </div>

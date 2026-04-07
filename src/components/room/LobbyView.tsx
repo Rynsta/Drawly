@@ -24,6 +24,7 @@ export function LobbyView() {
   const leaveRoom = useDrawlyStore((s) => s.leaveRoom);
   const socketConnected = useDrawlyStore((s) => s.socketConnected);
   const [starting, setStarting] = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
 
   if (!room) return null;
 
@@ -39,57 +40,74 @@ export function LobbyView() {
     await navigator.clipboard.writeText(room.code);
     hapticSuccess();
     sfxSuccess();
+    setCodeCopied(true);
+    setTimeout(() => setCodeCopied(false), 2000);
   };
 
   return (
-    <div className="mx-auto flex max-w-5xl flex-col gap-8 px-4 py-10">
-      <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+    <div className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-10">
+      {/* Header */}
+      <header className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
-          <p className="text-sm font-medium uppercase tracking-[0.2em] text-pink-300/80">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-pink-300/80">
             Lobby
           </p>
           <h1 className="text-gradient-brand mt-1 font-display text-4xl font-bold tracking-tight md:text-5xl">
             Drawly
           </h1>
-          <p className="mt-2 max-w-lg text-sm text-zinc-400">
-            {socketConnected ? (
-              <>
-                Room{" "}
-                <button
-                  type="button"
-                  onClick={copyCode}
-                  className="font-mono text-amber-300 underline decoration-dotted underline-offset-4 hover:text-amber-200"
-                >
+          {socketConnected ? (
+            <div className="mt-3">
+              <p className="mb-1.5 text-xs text-zinc-500">
+                Share this code with friends
+              </p>
+              <button
+                type="button"
+                onClick={copyCode}
+                className="group inline-flex items-center gap-3 rounded-2xl border border-amber-500/25 bg-amber-500/10 px-5 py-3 transition-all hover:border-amber-400/40 hover:bg-amber-500/15"
+              >
+                <span className="font-mono text-2xl font-bold tracking-[0.25em] text-amber-300 md:text-3xl">
                   {room.code}
-                </button>
-                — share this with your friends!
-              </>
-            ) : (
-              <span className="text-amber-300/90">Connecting to server…</span>
-            )}
-          </p>
+                </span>
+                <span className="rounded-lg bg-amber-500/15 px-2 py-0.5 text-xs font-semibold text-amber-400 ring-1 ring-amber-500/25 transition-colors group-hover:bg-amber-500/25">
+                  {codeCopied ? "Copied!" : "Copy"}
+                </span>
+              </button>
+            </div>
+          ) : (
+            <p className="mt-2 flex items-center gap-1.5 text-sm text-amber-300/90">
+              <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-amber-400" />
+              Connecting to server…
+            </p>
+          )}
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant="ghost"
-            onClick={() => {
-              leaveRoom();
-              router.push("/");
-            }}
-          >
-            Leave
-          </Button>
-        </div>
+        <Button
+          variant="ghost"
+          onClick={() => {
+            leaveRoom();
+            router.push("/");
+          }}
+        >
+          ← Leave
+        </Button>
       </header>
 
+      {/* Profile + Settings */}
       <div className="grid gap-6 lg:grid-cols-2">
+        {/* Profile Card */}
         <GlassCard>
-          <h2 className="font-display text-lg font-semibold text-white">That&apos;s you</h2>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <label className="block text-xs text-zinc-500">
-              Display name
+          <div className="mb-4 flex items-center gap-2">
+            <span className="text-xl">✏️</span>
+            <h2 className="font-display text-base font-bold text-white">
+              That&apos;s you
+            </h2>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="block">
+              <span className="mb-1.5 block text-xs font-medium text-zinc-400">
+                Display name
+              </span>
               <input
-                className="mt-1 w-full rounded-xl border border-white/10 bg-night-deep/80 px-3 py-2 text-sm text-white outline-none ring-violet-500/30 focus:ring-2"
+                className="w-full rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white outline-none transition-all placeholder:text-zinc-600 focus:border-violet-500/50 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.18)]"
                 value={player.name}
                 placeholder="Your name"
                 maxLength={24}
@@ -100,15 +118,16 @@ export function LobbyView() {
               />
             </label>
             <div>
-              <p className="text-xs text-zinc-500">Emoji</p>
-              <div className="mt-1 flex flex-wrap gap-1">
+              <p className="mb-1.5 text-xs font-medium text-zinc-400">Emoji</p>
+              <div className="flex flex-wrap gap-1">
                 {EMOJI_PRESETS.map((em) => (
                   <button
                     key={em}
                     type="button"
                     className={cn(
-                      "rounded-lg p-1.5 text-lg hover:bg-white/10",
-                      player.emoji === em && "bg-white/15 ring-1 ring-violet-400/50",
+                      "rounded-lg p-1.5 text-lg transition-all hover:scale-110 hover:bg-white/10",
+                      player.emoji === em &&
+                        "bg-white/15 ring-1 ring-violet-400/60 shadow-[0_0_12px_rgba(167,139,250,0.25)]",
                     )}
                     onClick={() => {
                       setPlayer({ emoji: em });
@@ -122,16 +141,20 @@ export function LobbyView() {
             </div>
           </div>
           <div className="mt-4">
-            <p className="text-xs text-zinc-500">Accent</p>
-            <div className="mt-2 flex flex-wrap gap-2">
+            <p className="mb-2 text-xs font-medium text-zinc-400">
+              Accent color
+            </p>
+            <div className="flex flex-wrap gap-2.5">
               {COLOR_PRESETS.map((c) => (
                 <button
                   key={c}
                   type="button"
                   aria-label={c}
                   className={cn(
-                    "h-9 w-9 rounded-full ring-2 ring-offset-2 ring-offset-night",
-                    player.color === c ? "ring-white" : "ring-transparent",
+                    "h-8 w-8 rounded-full transition-all duration-150 hover:scale-110",
+                    player.color === c
+                      ? "ring-2 ring-white ring-offset-2 ring-offset-[#0c0c14] scale-110"
+                      : "ring-1 ring-white/10",
                   )}
                   style={{ backgroundColor: c }}
                   onClick={() => {
@@ -142,34 +165,54 @@ export function LobbyView() {
               ))}
             </div>
           </div>
-          <div className="mt-6 flex flex-wrap gap-3">
+          <div className="mt-5">
             <Button
               variant={me?.ready ? "secondary" : "primary"}
               onClick={async () => {
                 await setReady(!me?.ready);
               }}
             >
-              {me?.ready ? "Unready" : "Ready up"}
+              {me?.ready ? "✓ Ready" : "Ready up"}
             </Button>
           </div>
         </GlassCard>
 
+        {/* Game Setup Card */}
         <GlassCard>
-          <h2 className="font-display text-lg font-semibold text-white">Game setup</h2>
-          <p className="mt-1 text-xs text-zinc-500">
-            {PLAYER_LIMITS.min}–{PLAYER_LIMITS.max} players
-          </p>
-          <div className="mt-3 rounded-xl border border-violet-500/20 bg-violet-500/5 px-4 py-3">
+          <div className="mb-4 flex items-center gap-2">
+            <span className="text-xl">⚙️</span>
+            <div>
+              <h2 className="font-display text-base font-bold text-white">
+                Game setup
+              </h2>
+              <p className="text-xs text-zinc-500">
+                {PLAYER_LIMITS.min}–{PLAYER_LIMITS.max} players
+              </p>
+            </div>
+          </div>
+
+          <div className="mb-5 rounded-xl border border-violet-500/20 bg-violet-500/[0.08] px-4 py-3">
             <p className="text-sm text-violet-100">
               Everyone starts a book that gets passed around —{" "}
               <span className="font-semibold text-white">
-                {room.players.length} player{room.players.length !== 1 ? "s" : ""} = {room.players.length} round{room.players.length !== 1 ? "s" : ""}
+                {room.players.length} player
+                {room.players.length !== 1 ? "s" : ""} ={" "}
+                {room.players.length} round
+                {room.players.length !== 1 ? "s" : ""}
               </span>
             </p>
           </div>
-          <div className="mt-4 grid gap-4">
-            <label className="block text-xs text-zinc-500">
-              Prompt time (seconds)
+
+          <div className="space-y-5">
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <label className="text-xs font-medium text-zinc-400">
+                  Prompt time
+                </label>
+                <span className="rounded-lg bg-violet-500/15 px-2 py-0.5 font-mono text-xs font-bold text-violet-300">
+                  {room.settings.promptSeconds}s
+                </span>
+              </div>
               <input
                 type="range"
                 min={30}
@@ -179,14 +222,18 @@ export function LobbyView() {
                 onChange={(e) =>
                   updateSettings({ promptSeconds: Number(e.target.value) })
                 }
-                className="mt-2 w-full accent-violet-500"
+                className="w-full disabled:opacity-40"
               />
-              <span className="text-sm text-zinc-300">
-                {room.settings.promptSeconds}s
-              </span>
-            </label>
-            <label className="block text-xs text-zinc-500">
-              Draw time (seconds)
+            </div>
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <label className="text-xs font-medium text-zinc-400">
+                  Draw time
+                </label>
+                <span className="rounded-lg bg-amber-500/15 px-2 py-0.5 font-mono text-xs font-bold text-amber-300">
+                  {room.settings.drawSeconds}s
+                </span>
+              </div>
               <input
                 type="range"
                 min={45}
@@ -196,14 +243,18 @@ export function LobbyView() {
                 onChange={(e) =>
                   updateSettings({ drawSeconds: Number(e.target.value) })
                 }
-                className="mt-2 w-full accent-amber-500"
+                className="w-full accent-amber-500 disabled:opacity-40"
               />
-              <span className="text-sm text-zinc-300">
-                {room.settings.drawSeconds}s
-              </span>
-            </label>
-            <label className="block text-xs text-zinc-500">
-              Describe time (seconds)
+            </div>
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <label className="text-xs font-medium text-zinc-400">
+                  Describe time
+                </label>
+                <span className="rounded-lg bg-pink-500/15 px-2 py-0.5 font-mono text-xs font-bold text-pink-300">
+                  {room.settings.describeSeconds}s
+                </span>
+              </div>
               <input
                 type="range"
                 min={30}
@@ -213,66 +264,96 @@ export function LobbyView() {
                 onChange={(e) =>
                   updateSettings({ describeSeconds: Number(e.target.value) })
                 }
-                className="mt-2 w-full accent-pink-500"
+                className="w-full accent-pink-500 disabled:opacity-40"
               />
-              <span className="text-sm text-zinc-300">
-                {room.settings.describeSeconds}s
-              </span>
-            </label>
+            </div>
           </div>
+
           <div className="mt-6">
-            <Button
-              disabled={!canStart || starting}
-              onClick={async () => {
-                setStarting(true);
-                const ok = await startGame();
-                setStarting(false);
-                if (ok) {
-                  sfxSuccess();
-                  hapticSuccess();
-                }
-              }}
-            >
-              {isHost ? "Start game" : "Waiting for host"}
-            </Button>
+            {isHost ? (
+              <Button
+                disabled={!canStart || starting}
+                onClick={async () => {
+                  setStarting(true);
+                  const ok = await startGame();
+                  setStarting(false);
+                  if (ok) {
+                    sfxSuccess();
+                    hapticSuccess();
+                  }
+                }}
+              >
+                {starting ? "Starting…" : canStart ? "🚀 Start game" : "Waiting for everyone…"}
+              </Button>
+            ) : (
+              <div className="flex items-center gap-2 text-sm text-zinc-400">
+                <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-violet-400" />
+                Waiting for host to start…
+              </div>
+            )}
           </div>
         </GlassCard>
       </div>
 
+      {/* Players List */}
       <GlassCard>
-        <h2 className="font-display text-lg font-semibold text-white">
-          Who&apos;s here ({room.players.length}/{PLAYER_LIMITS.max})
-        </h2>
-        <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="font-display text-base font-bold text-white">
+            Who&apos;s here
+          </h2>
+          <span className="rounded-full bg-white/[0.08] px-2.5 py-0.5 text-xs font-semibold text-zinc-300 ring-1 ring-white/10">
+            {room.players.length} / {PLAYER_LIMITS.max}
+          </span>
+        </div>
+        <ul className="grid gap-2.5 sm:grid-cols-2">
           {room.players.map((p, i) => (
             <motion.li
               key={p.id}
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.04 }}
-              className="flex items-center gap-3 rounded-xl border border-white/10 bg-night-deep/50 px-3 py-2"
+              className="relative flex items-center gap-3 overflow-hidden rounded-xl bg-white/[0.04] px-3 py-2.5 ring-1 ring-white/[0.07]"
+              style={{
+                boxShadow: `inset 3px 0 0 ${p.color}60`,
+              }}
             >
+              {/* Subtle color accent background */}
+              <div
+                className="pointer-events-none absolute inset-y-0 left-0 w-16 opacity-10"
+                style={{
+                  background: `linear-gradient(to right, ${p.color}, transparent)`,
+                }}
+              />
               <span
-                className="flex h-11 w-11 items-center justify-center rounded-xl text-xl"
-                style={{ backgroundColor: `${p.color}33` }}
+                className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xl"
+                style={{ backgroundColor: `${p.color}22` }}
               >
                 {p.emoji}
               </span>
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-medium text-white">
+              <div className="relative z-10 min-w-0 flex-1">
+                <p className="flex items-center gap-1.5 truncate text-sm font-semibold text-white">
                   {p.name}
                   {p.isHost && (
-                    <span className="ml-2 text-xs text-violet-300">Host</span>
+                    <span className="rounded-full bg-violet-500/20 px-1.5 py-0.5 text-[10px] font-bold text-violet-300 ring-1 ring-violet-500/30">
+                      HOST
+                    </span>
                   )}
                 </p>
-                <p className="text-xs text-zinc-500">
-                  {p.ready ? "Ready" : "Not ready"}
+                <p
+                  className={cn(
+                    "text-xs",
+                    p.ready ? "text-emerald-400" : "text-zinc-500",
+                  )}
+                >
+                  {p.ready ? "✓ Ready" : "Not ready"}
                 </p>
               </div>
               <span
                 className={cn(
-                  "h-2.5 w-2.5 rounded-full",
-                  p.ready ? "bg-emerald-400 shadow-glow-gold" : "bg-zinc-600",
+                  "relative z-10 h-2.5 w-2.5 shrink-0 rounded-full",
+                  p.ready
+                    ? "bg-emerald-400 shadow-[0_0_8px_rgba(74,222,128,0.5)]"
+                    : "bg-zinc-600",
                 )}
               />
             </motion.li>

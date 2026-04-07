@@ -35,16 +35,27 @@ export function TurnTimer({ endsAt }: { endsAt: number | null }) {
   if (left === null) return null;
 
   const urgent = left <= 10;
+  const critical = left <= 5;
+
   return (
     <div
-      className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-semibold ring-1 ${
-        urgent
-          ? "bg-amber-500/20 text-amber-200 ring-amber-400/40"
-          : "bg-white/5 text-zinc-200 ring-white/10"
+      className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold ring-1 transition-all duration-300 ${
+        critical
+          ? "timer-urgent bg-red-500/20 text-red-200 ring-red-400/50"
+          : urgent
+            ? "bg-amber-500/20 text-amber-200 ring-amber-400/40"
+            : "bg-white/[0.06] text-zinc-200 ring-white/10"
       }`}
     >
-      <span className="tabular-nums">{left}s</span>
-      <span className="text-xs font-normal text-zinc-400">left</span>
+      {urgent && (
+        <span
+          className={`h-2 w-2 rounded-full ${critical ? "animate-ping bg-red-400" : "bg-amber-400 pulse-ready"}`}
+        />
+      )}
+      <span className={`tabular-nums ${urgent ? "text-base" : ""}`}>
+        {left}
+      </span>
+      <span className="text-xs font-normal opacity-60">s</span>
     </div>
   );
 }
