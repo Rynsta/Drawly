@@ -185,11 +185,20 @@ export const useDrawlyStore = create<DrawlyStore>((set, get) => ({
   submit: (content) =>
     new Promise<boolean>((resolve) => {
       const socket = getSocket();
+      const roundAtSubmit = get().room?.currentRound;
       socket.emit(
         "game:submit",
         content,
         (ack: { ok?: boolean }) => {
-          if (ack?.ok) set({ submitted: true });
+          if (ack?.ok) {
+            // Only mark submitted if we're still on the same round.
+            // When the last player submits, the server broadcasts room:state
+            // (advancing the round) before sending the ack — so by the time
+            // this callback fires, the round may have already changed.
+            if (get().room?.currentRound === roundAtSubmit) {
+              set({ submitted: true });
+            }
+          }
           resolve(Boolean(ack?.ok));
         },
       );
