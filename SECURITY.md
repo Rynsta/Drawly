@@ -1,37 +1,62 @@
-# Security
+# Security Policy
 
-## Reporting a vulnerability
+## Reporting a Vulnerability
 
-If you believe you have found a security issue in this project, please use your Git host’s **private security advisory** flow (e.g. GitHub *Security → Report a vulnerability*) or contact the maintainers privately. Please avoid filing public issues for undisclosed vulnerabilities.
+If you discover a security issue, **do not open a public issue.** Instead, use one of these channels:
 
-## Secrets and configuration
+- **GitHub:** Open a [private security advisory](https://docs.github.com/en/code-security/security-advisories/guidance-on-reporting-and-writing-information-about-vulnerabilities/privately-reporting-a-security-vulnerability) via *Security > Report a vulnerability* on the repository.
+- **Email:** Contact the maintainer directly if listed in the repository profile.
 
-- **Never commit** `.env`, `.env.local`, or any file containing real API keys. This repository only ships [`.env.example`](./.env.example) and [`env.lan.example`](./env.lan.example) with placeholders.
-- Production values (e.g. optional [Upstash](https://upstash.com) `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`) belong solely in your host’s environment (Vercel, Railway, etc.).
+You should receive an acknowledgement within 72 hours. Fixes for confirmed vulnerabilities will be released as quickly as possible with appropriate credit.
 
-## Dependency hygiene
+---
 
-- Run `npm audit` regularly and after dependency changes. As of the last maintenance pass, `npm audit` reported **0** vulnerabilities with **Next.js 15.5.x** and an updated `@playwright/test` dev dependency.
-- Major upgrades may reintroduce advisories; treat `npm audit` output as advisory and confirm impact against your deployment model (e.g. self-hosted vs managed platform).
+## Secrets and Configuration
 
-### Historical note (dev tooling)
+- `.env`, `.env.local`, and any file containing real credentials must **never** be committed. The repository only ships `.env.example` and `env.lan.example` with placeholder values.
+- Production secrets (Upstash Redis credentials, CORS origins, etc.) must be configured through your hosting provider's environment variable management (Vercel, Railway, etc.).
+- Before making the repository public or transferring ownership, verify that no secrets exist in the Git history: check `git log --all -- .env .env.local` and consider using tools like `trufflehog` or `gitleaks` for a thorough scan.
 
-Older toolchains pulled in a **glob** CLI advisory (command injection via `-c` / `--cmd`). That path affected **development** dependencies (ESLint / Next lint integration), not the runtime Socket.io server. Upgrading Next.js and `eslint-config-next` to current 15.x cleared the reported issues in this tree.
+---
 
-## Application threat model
+## Dependency Management
 
-Drawly is a **casual real-time party game** without user accounts or strong authentication.
+Run `npm audit` after every dependency change and periodically between releases. Treat advisories in the context of your deployment model:
 
-| Topic | Notes |
-|--------|--------|
-| **Socket.io** | Clients connect anonymously. Room state is coordinated on trust; there is **no rate limiting** on events. |
-| **Player identity** | Player IDs are chosen on the client and are **visible to everyone in the room**. The server allows reconnecting with an existing `player.id` in the same room (socket rebind), so anyone who knows another player’s ID could **grief or impersonate** that slot. This is acceptable for a lobby-style game but **not** suitable for high-assurance or competitive scenarios. |
-| **CORS** | The socket server allows origins from `CLIENT_ORIGIN` or derived from `NEXT_PUBLIC_APP_URL` ([`server/index.ts`](./server/index.ts)). Misconfiguration in production can break clients or widen allowed origins—set these explicitly for each environment. |
-| **Payload size** | Socket.io is configured with a large HTTP buffer limit for drawing payloads. Many concurrent large messages could stress a small server (**availability** risk). |
-| **Stored content** | Game text and `data:` image URLs are stored in memory (and optionally Redis). Do not treat the service as a private vault for sensitive personal data. |
+- **Runtime dependencies** (Express, Socket.io, Next.js) &mdash; patch promptly.
+- **Dev-only dependencies** (Playwright, ESLint, PostCSS) &mdash; lower urgency, but still keep current.
 
-There is no `dangerouslySetInnerHTML` on user-controlled strings in the reviewed UI; text is rendered as React children and drawings use `<img src="data:...">` with server-side checks on submissions.
+---
 
-## Repository verification (maintainers)
+## Threat Model
 
-Before making the repository public, confirm that `.env` / `.env.local` have **never** been committed (`git log` on those paths should be empty) and scan history for accidental secret strings if the repo was ever private with mistakes.
+Drawly is a **casual, unauthenticated party game**. The security posture reflects that context &mdash; it is not designed for competitive or high-assurance environments.
+
+### Identity and Authentication
+
+There are no user accounts. Player IDs are generated client-side and are visible to all room participants. The server allows reconnection by matching `player.id`, which means anyone who knows (or guesses) another player's ID within the same room could impersonate that player. This is an accepted trade-off for a frictionless join flow.
+
+### Socket.io Transport
+
+| Concern | Status |
+|---|---|
+| **Rate limiting** | Not implemented. A malicious client could flood events. Consider adding rate limiting (e.g. `socket.io-ratelimiter`) for public-facing deployments. |
+| **CORS** | Origins are restricted to values in `CLIENT_ORIGIN` or derived from `NEXT_PUBLIC_APP_URL`. Misconfiguration (e.g. wildcards) would widen the attack surface. Always set explicit origins in production. |
+| **Payload size** | `maxHttpBufferSize` is set to 15 MB to accommodate drawing data. Large payloads from many concurrent users could exhaust memory on small instances. |
+| **Transport encryption** | Socket.io inherits TLS from the hosting provider. Ensure the socket server is behind HTTPS in production. |
+
+### Stored Content
+
+Game text and drawing data (base64 `data:` URIs) are held in server memory and optionally persisted to Upstash Redis. This data is transient game content &mdash; do not treat Drawly as a store for sensitive information. Room data is deleted when all players leave.
+
+### Cross-Site Scripting (XSS)
+
+User-provided text is rendered as React children (not via `dangerouslySetInnerHTML`). Drawing data is rendered through `<img src="data:image/...">` with server-side format validation on submission. No HTML injection vectors have been identified in the current codebase.
+
+### Denial of Service
+
+The primary DoS vector is event flooding through Socket.io. The server does not enforce per-socket rate limits or connection caps. For internet-facing deployments, consider:
+
+- Rate limiting at the Socket.io or reverse-proxy layer
+- Connection limits per IP
+- Payload size validation beyond the current buffer limit
